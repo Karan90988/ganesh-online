@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(npx tsc *)",
+      "Bash(DATABASE_URL=\"postgresql://u:p@localhost:5432/db?schema=public\" AUTH_SECRET=\"build-time-secret-placeholder-1234567890\" NEXT_PUBLIC_SITE_URL=\"http://localhost:3000\" npx next build)"
+    ]
+  }
+}

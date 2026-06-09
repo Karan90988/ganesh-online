@@ -1,0 +1,215 @@
+// ============================================================
+// Ganesh Trading Company - Prisma Schema
+// PostgreSQL database for wholesale + retail ordering platform
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------------------------------------------
+// ENUMS
+// ------------------------------------------------------------
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  OUT_OF_STOCK
+}
+
+enum Unit {
+  PACKET
+  BOX
+  CARTON
+  KG
+  GRAM
+  LITRE
+  PIECE
+  SACK
+}
+
+enum CustomerType {
+  WHOLESALE
+  RETAIL
+}
+
+enum EnquiryStatus {
+  NEW
+  CONTACTED
+  DELIVERED
+  CANCELLED
+}
+
+enum DeliveryArea {
+  VIRAR_EAST
+  VIRAR_WEST
+  VASAI_EAST
+  VASAI_WEST
+  NALASOPARA_EAST
+  NALASOPARA_WEST
+  OTHER
+}
+
+enum AdminRole {
+  OWNER
+  STAFF
+}
+
+// ------------------------------------------------------------
+// MODELS
+// ------------------------------------------------------------
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  imageUrl    String?
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([slug])
+  @@map("categories")
+}
+
+model Product {
+  id            String        @id @default(cuid())
+  name          String
+  slug          String        @unique
+  sku           String        @unique
+  description   String?
+  imageUrl      String?
+  // Pricing — wholesale and retail are fully independent
+  mrp           Decimal       @db.Decimal(10, 2)
+  wholesalePrice Decimal      @db.Decimal(10, 2)  // wholesale LOOSE price per base unit (e.g. per kg)
+  retailPrice   Decimal       @db.Decimal(10, 2)
+  // Wholesale pack / bulk buying configuration (optional)
+  hasBulkPricing       Boolean  @default(false)        // product uses pack-based wholesale buying
+  wholesaleLooseEnabled Boolean @default(true)         // allow loose per-unit wholesale (false for biscuits)
+  wholesaleMinQty      Int      @default(1)            // minimum loose wholesale order (base units, e.g. 5 kg)
+  // Pack tier 1 (smaller pack, e.g. "Outer" or "Sack")
+  pack1Label    String?                                // e.g. "Outer", "Sack"
+  pack1Size     Int?                                   // base units in one pack-1 (e.g. 12 packets, 26 kg)
+  pack1Price    Decimal?      @db.Decimal(10, 2)
+  // Pack tier 2 (larger pack, e.g. "Box" / "Carton")
+  pack2Label    String?                                // e.g. "Box", "Carton"
+  pack2Size     Int?                                   // base units in one pack-2 (e.g. 48 packets)
+  pack2Price    Decimal?      @db.Decimal(10, 2)
+  // Inventory
+  stockQuantity Int           @default(0)
+  unit          Unit          @default(PIECE)      // base selling unit (KG, LITRE, PIECE ...)
+  status        ProductStatus @default(ACTIVE)
+  // Relations
+  categoryId    String
+  category      Category      @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  enquiryItems  EnquiryItem[]
+  // Billing-software integration: external reference id for future sync
+  externalRef   String?       @unique
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([slug])
+  @@index([categoryId])
+  @@index([status])
+  @@map("products")
+}
+
+model Customer {
+  id          String       @id @default(cuid())
+  name        String
+  mobile      String       @unique
+  shopName    String?      // wholesale only (optional)
+  type        CustomerType @default(RETAIL)
+  enquiries   Enquiry[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([mobile])
+  @@map("customers")
+}
+
+model Enquiry {
+  id            String        @id @default(cuid())
+  // Human-friendly sequential id, e.g. GTC-000001
+  enquiryCode   String        @unique
+  sequence      Int           @unique @default(autoincrement())
+  type          CustomerType
+  status        EnquiryStatus @default(NEW)
+  // Snapshot of customer details at time of order
+  customerName  String
+  mobile        String
+  shopName      String?       // wholesale
+  deliveryArea  DeliveryArea? // retail (legacy / optional zone)
+  deliveryAddress String?     // retail full delivery address
+  grandTotal    Decimal       @db.Decimal(12, 2)
+  notes         String?       // admin notes
+  whatsappSent  Boolean       @default(false)
+  // Relations
+  customerId    String?
+  customer      Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  items         EnquiryItem[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([enquiryCode])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+  @@map("enquiries")
+}
+
+model EnquiryItem {
+  id          String   @id @default(cuid())
+  enquiryId   String
+  enquiry     Enquiry  @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+  productId   String?
+  product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  // Snapshot fields (so order history survives product edits/deletes)
+  productName String
+  unit        Unit
+  unitPrice   Decimal  @db.Decimal(10, 2)
+  quantity    Int
+  lineTotal   Decimal  @db.Decimal(12, 2)
+
+  @@index([enquiryId])
+  @@map("enquiry_items")
+}
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         AdminRole @default(OWNER)
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("admin_users")
+}
+
+// Audit log for Excel imports + future billing-software syncs
+model ImportLog {
+  id           String   @id @default(cuid())
+  source       String   @default("EXCEL") // EXCEL | BILLING_SOFTWARE | API
+  fileName     String?
+  totalRows    Int      @default(0)
+  created      Int      @default(0)
+  updated      Int      @default(0)
+  skipped      Int      @default(0)
+  failed       Int      @default(0)
+  errors       Json?    // array of { row, message }
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("import_logs")
+}
