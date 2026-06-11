@@ -8,15 +8,19 @@ import { formatCurrency } from "@/lib/utils";
 import { MIN_ORDER_VALUE } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { useStoreHydrated } from "@/hooks/use-hydrated";
+import { useT } from "@/i18n/context";
+import { QtyInput } from "./qty-input";
 
 export function CartView({ mode }: { mode: CartMode }) {
   const hydrated = useStoreHydrated();
+  const t = useT();
   const basePath = mode === "WHOLESALE" ? "/wholesale" : "/retail";
   const items = useCart((s) => s.items);
   const lines = linesForMode(items, mode);
   const total = modeTotal(items, mode);
   const increment = useCart((s) => s.increment);
   const decrement = useCart((s) => s.decrement);
+  const setQuantity = useCart((s) => s.setQuantity);
   const removeLine = useCart((s) => s.removeLine);
 
   const minValue = MIN_ORDER_VALUE[mode];
@@ -28,10 +32,10 @@ export function CartView({ mode }: { mode: CartMode }) {
     return (
       <div className="container flex flex-col items-center justify-center gap-4 py-20 text-center">
         <ShoppingCart className="h-16 w-16 text-muted-foreground" />
-        <h1 className="text-2xl font-bold">Your cart is empty</h1>
-        <p className="text-muted-foreground">Add some products to get started.</p>
+        <h1 className="text-2xl font-bold">{t("cart.empty")}</h1>
+        <p className="text-muted-foreground">{t("cart.emptyDesc")}</p>
         <Link href={basePath}>
-          <Button size="lg">Browse Products</Button>
+          <Button size="lg">{t("common.browseProducts")}</Button>
         </Link>
       </div>
     );
@@ -39,9 +43,7 @@ export function CartView({ mode }: { mode: CartMode }) {
 
   return (
     <div className="container py-4">
-      <h1 className="mb-4 text-2xl font-bold">
-        Your {mode === "WHOLESALE" ? "Wholesale " : ""}Cart
-      </h1>
+      <h1 className="mb-4 text-2xl font-bold">{t("cart.title")}</h1>
 
       <div className="space-y-3">
         {lines.map((line) => (
@@ -75,10 +77,12 @@ export function CartView({ mode }: { mode: CartMode }) {
                   <button className="flex h-9 w-9 items-center justify-center" onClick={() => decrement(line.key)} aria-label="Decrease">
                     <Minus className="h-4 w-4" />
                   </button>
-                  <span className="min-w-12 text-center font-bold">
-                    {line.quantity}
-                    <span className="ml-0.5 text-xs font-normal text-muted-foreground">{line.unitLabel}</span>
-                  </span>
+                  <QtyInput
+                    value={line.quantity}
+                    min={line.minQty}
+                    unitLabel={line.unitLabel}
+                    onCommit={(q) => setQuantity(line.key, q)}
+                  />
                   <button className="flex h-9 w-9 items-center justify-center" onClick={() => increment(line.key)} aria-label="Increase">
                     <Plus className="h-4 w-4" />
                   </button>
@@ -93,29 +97,29 @@ export function CartView({ mode }: { mode: CartMode }) {
       {/* Summary */}
       <div className="mt-5 rounded-xl border bg-card p-4">
         <div className="flex items-center justify-between text-lg">
-          <span className="font-semibold">Grand Total</span>
+          <span className="font-semibold">{t("common.grandTotal")}</span>
           <span className="font-extrabold">{formatCurrency(total)}</span>
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Final price confirmed by the shop on WhatsApp. No online payment required.
-        </p>
+        <p className="mt-1 text-xs text-muted-foreground">{t("cart.priceNote")}</p>
 
         {belowMin ? (
           <>
             <p className="mt-4 rounded-lg bg-amber-50 p-3 text-center text-sm font-medium text-amber-800">
-              Add {formatCurrency(minValue - total)} more to reach the minimum order of{" "}
-              {formatCurrency(minValue)}.
+              {t("cart.minNotice", {
+                more: formatCurrency(minValue - total),
+                min: formatCurrency(minValue),
+              })}
             </p>
             <Link href={basePath} className="mt-3 block">
               <Button size="lg" variant="outline" className="w-full">
-                Add more items
+                {t("common.addMore")}
               </Button>
             </Link>
           </>
         ) : (
           <Link href={`${basePath}/checkout`} className="mt-4 block">
             <Button size="lg" className="w-full">
-              Proceed to Checkout <ArrowRight className="h-5 w-5" />
+              {t("common.proceedToCheckout")} <ArrowRight className="h-5 w-5" />
             </Button>
           </Link>
         )}

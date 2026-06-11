@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
         productName: it.productName,
         unit: it.unit as never,
         quantity: it.quantity,
+        unitPrice: it.unitPrice,
         lineTotal: it.lineTotal,
       })),
       grandTotal: enquiry.grandTotal,

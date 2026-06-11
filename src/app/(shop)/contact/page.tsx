@@ -2,13 +2,15 @@ import { Metadata } from "next";
 import { Phone, MapPin, MessageCircle, Clock, Navigation } from "lucide-react";
 import { ShopShell } from "@/components/shop/shop-shell";
 import { Button } from "@/components/ui/button";
+import { getServerT } from "@/i18n/server";
 
 export const metadata: Metadata = {
   title: "Contact Us",
   description: "Get in touch with Ganesh Trading Company for wholesale and retail grocery orders.",
 };
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const t = await getServerT();
   const phone = process.env.NEXT_PUBLIC_BUSINESS_PHONE || "+91 99999 99999";
   const address = process.env.NEXT_PUBLIC_BUSINESS_ADDRESS || "Virar West, Maharashtra";
   const mapUrl = process.env.NEXT_PUBLIC_BUSINESS_MAP_URL || "";
@@ -18,33 +20,31 @@ export default function ContactPage() {
   return (
     <ShopShell mode="RETAIL">
       <div className="container max-w-2xl py-6">
-        <h1 className="mb-1 text-2xl font-bold">Contact Us</h1>
-        <p className="mb-6 text-muted-foreground">
-          We&apos;re happy to help with your wholesale or retail order.
-        </p>
+        <h1 className="mb-1 text-2xl font-bold">{t("contact.title")}</h1>
+        <p className="mb-6 text-muted-foreground">{t("contact.subtitle")}</p>
 
         <div className="space-y-3">
-          <InfoRow icon={<Phone className="h-5 w-5" />} label="Phone" value={phone} href={`tel:${phone.replace(/\s/g, "")}`} />
+          <InfoRow icon={<Phone className="h-5 w-5" />} label={t("contact.phone")} value={phone} href={`tel:${phone.replace(/\s/g, "")}`} />
           <InfoRow
             icon={<MapPin className="h-5 w-5" />}
-            label="Address"
+            label={t("contact.address")}
             value={address}
             href={mapUrl || undefined}
           />
-          <InfoRow icon={<Clock className="h-5 w-5" />} label="Open" value="Open Everyday, 8 AM to 9 PM" />
+          <InfoRow icon={<Clock className="h-5 w-5" />} label={t("contact.open")} value="Open Everyday, 8 AM to 9 PM" />
         </div>
 
         {mapUrl && (
           <a href={mapUrl} target="_blank" rel="noopener noreferrer" className="mt-4 block">
             <Button size="lg" variant="outline" className="w-full">
-              <Navigation className="h-5 w-5" /> Get Directions on Google Maps
+              <Navigation className="h-5 w-5" /> {t("contact.getDirections")}
             </Button>
           </a>
         )}
 
         <a href={waUrl} target="_blank" rel="noopener noreferrer" className="mt-3 block">
           <Button size="lg" className="w-full bg-[#25D366] hover:bg-[#1ebe5d]">
-            <MessageCircle className="h-5 w-5" /> Chat on WhatsApp
+            <MessageCircle className="h-5 w-5" /> {t("contact.chatWhatsApp")}
           </Button>
         </a>
       </div>

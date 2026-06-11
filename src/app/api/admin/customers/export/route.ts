@@ -12,7 +12,7 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
 
-    const header = ["Name", "Mobile", "Shop Name", "Type", "Total Enquiries", "Joined"];
+    const header = ["Name", "Mobile", "Shop Name", "Type", "Total Orders", "Joined"];
     const rows = customers.map((c) => [
       c.name,
       c.mobile,

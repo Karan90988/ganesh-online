@@ -5,7 +5,52 @@ export interface WhatsAppItem {
   productName: string;
   unit: keyof typeof UNIT_LABELS;
   quantity: number;
+  unitPrice: number;
   lineTotal: number;
+}
+
+// Section divider used in WhatsApp messages.
+const DIVIDER = "━━━━━━━━━━━━━━━━━━━━";
+
+/** ₹ amount: no decimals for whole numbers, 2 decimals otherwise. */
+function rupee(n: number): string {
+  return n % 1 === 0
+    ? new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(n)
+    : new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+}
+
+interface TableRow {
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+}
+
+/**
+ * Builds a monospaced (```) products table with aligned Qty / Rate / Amount
+ * columns and a right-aligned grand total. WhatsApp renders text inside ``` in
+ * a fixed-width font, so the padded columns line up on every device.
+ */
+function productTable(items: TableRow[], grandTotal: number): string {
+  const money = (n: number) => `₹${rupee(n)}`;
+  const qty = items.map((it) => String(it.quantity));
+  const rate = items.map((it) => money(it.unitPrice));
+  const amt = items.map((it) => money(it.lineTotal));
+
+  const qtyW = Math.max(1, ...qty.map((s) => s.length));
+  const rateW = Math.max(1, ...rate.map((s) => s.length));
+  const amtW = Math.max(money(grandTotal).length, ...amt.map((s) => s.length));
+  const leftW = 3 + qtyW + 3 + rateW; // "   " + qty + " x " + rate
+
+  const rows: string[] = [];
+  items.forEach((it, i) => {
+    rows.push(`${i + 1}. ${it.productName}`);
+    rows.push(`   ${qty[i].padStart(qtyW)} x ${rate[i].padStart(rateW)} = ${amt[i].padStart(amtW)}`);
+  });
+  rows.push("─".repeat(leftW + 3 + amtW));
+  rows.push(`${"GRAND TOTAL".padEnd(leftW)} = ${money(grandTotal).padStart(amtW)}`);
+
+  return "```\n" + rows.join("\n") + "\n```";
 }
 
 export interface WhatsAppOrder {
@@ -26,63 +71,41 @@ export interface WhatsAppOrder {
  * delivery area). Returns plain text (not yet URL-encoded).
  */
 export function buildWhatsAppMessage(order: WhatsAppOrder): string {
-  const lines: string[] = [];
-  lines.push("Hello Ganesh Trading Company,");
-  lines.push("");
+  const L: string[] = [];
 
-  if (order.type === "WHOLESALE") {
-    lines.push("Wholesale Order Enquiry");
-    lines.push("");
-    lines.push(`Enquiry ID: ${order.enquiryCode}`);
-    lines.push("");
-    lines.push(`Customer Name: ${order.customerName}`);
-    lines.push(`Mobile: ${order.mobile}`);
-    if (order.shopName) lines.push(`Shop Name: ${order.shopName}`);
-    lines.push("");
-    lines.push("Products:");
-    order.items.forEach((it, i) => {
-      lines.push(`${i + 1}. ${it.productName} x ${it.quantity} = ₹${formatNum(it.lineTotal)}`);
-    });
-  } else {
-    lines.push("Retail Order Enquiry");
-    lines.push("");
-    lines.push(`Enquiry ID: ${order.enquiryCode}`);
-    lines.push("");
-    lines.push(`Customer Name: ${order.customerName}`);
-    lines.push(`Mobile: ${order.mobile}`);
-    lines.push("");
-    if (order.deliveryAddress) {
-      lines.push(`Delivery Address: ${order.deliveryAddress}`);
-      lines.push("");
-    } else if (order.deliveryArea) {
-      lines.push(`Delivery Area: ${DELIVERY_AREA_LABELS[order.deliveryArea]}`);
-      lines.push("");
-    }
-    lines.push("Products:");
-    order.items.forEach((it, i) => {
-      lines.push(`${i + 1}. ${it.productName} x ${it.quantity}`);
-    });
+  L.push("*Hello Ganesh Trading Company*");
+  L.push(DIVIDER);
+  L.push(order.type === "WHOLESALE" ? "*Wholesale Order*" : "*Retail Order*");
+  L.push(`Order ID: ${order.enquiryCode}`);
+  L.push(DIVIDER);
+
+  // Customer section
+  L.push(`*Customer Name:* ${order.customerName}`);
+  L.push(`*Mobile:* ${order.mobile}`);
+  if (order.shopName) L.push(`*Shop Name:* ${order.shopName}`);
+  if (order.deliveryAddress) {
+    L.push(`*Delivery Address:* ${order.deliveryAddress}`);
+  } else if (order.deliveryArea) {
+    L.push(`*Delivery Area:* ${DELIVERY_AREA_LABELS[order.deliveryArea]}`);
   }
+  L.push(DIVIDER);
 
-  lines.push("");
-  lines.push(`Grand Total: ₹${formatNum(order.grandTotal)}`);
-  lines.push("");
-  lines.push("Please contact me regarding delivery.");
-  lines.push("");
-  lines.push("Thank You.");
+  // Products — aligned Qty x Rate = Amount table with grand total
+  L.push("*Products* (Qty x Rate = Amount)");
+  L.push(productTable(order.items, order.grandTotal));
+  L.push(DIVIDER);
+  L.push("Please contact me regarding delivery.");
+  L.push("");
+  L.push("Thank You.");
 
-  return lines.join("\n");
-}
-
-function formatNum(n: number): string {
-  return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(n);
+  return L.join("\n");
 }
 
 export interface InvoiceMessageInput {
   businessName: string;
   enquiryCode: string;
   customerName: string;
-  items: { productName: string; quantity: number; unit: string; lineTotal: number }[];
+  items: { productName: string; quantity: number; unit: string; unitPrice: number; lineTotal: number }[];
   grandTotal: number;
 }
 
@@ -91,20 +114,18 @@ export interface InvoiceMessageInput {
  * final/updated items). Returns plain text (not URL-encoded).
  */
 export function buildInvoiceMessage(input: InvoiceMessageInput): string {
-  const lines: string[] = [];
-  lines.push(`Hello ${input.customerName},`);
-  lines.push(`Here is your invoice from ${input.businessName}.`);
-  lines.push("");
-  lines.push(`Invoice No: ${input.enquiryCode}`);
-  lines.push("");
-  input.items.forEach((it, i) => {
-    lines.push(`${i + 1}. ${it.productName} x ${it.quantity} = ₹${formatNum(it.lineTotal)}`);
-  });
-  lines.push("");
-  lines.push(`Grand Total: ₹${formatNum(input.grandTotal)}`);
-  lines.push("");
-  lines.push("Thank you for shopping with us!");
-  return lines.join("\n");
+  const L: string[] = [];
+  L.push(`*${input.businessName}*`);
+  L.push(DIVIDER);
+  L.push("*INVOICE*");
+  L.push(`Invoice No: ${input.enquiryCode}`);
+  L.push(`Customer: ${input.customerName}`);
+  L.push(DIVIDER);
+  L.push("*Products* (Qty x Rate = Amount)");
+  L.push(productTable(input.items, input.grandTotal));
+  L.push(DIVIDER);
+  L.push("Thank you for shopping with us!");
+  return L.join("\n");
 }
 
 /** Normalises a stored 10-digit mobile to a wa.me number (adds 91 if needed). */

@@ -11,6 +11,7 @@ import {
   Users,
   ClipboardList,
   FileSpreadsheet,
+  Star,
   Store,
   LogOut,
   Menu,
@@ -22,10 +23,11 @@ import { Button } from "@/components/ui/button";
 const NAV = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/products", label: "Products", icon: Package },
+  { href: "/admin/featured", label: "Home Page", icon: Star },
   { href: "/admin/categories", label: "Categories", icon: Tags },
   { href: "/admin/inventory", label: "Inventory", icon: Boxes },
   { href: "/admin/customers", label: "Customers", icon: Users },
-  { href: "/admin/orders", label: "Order Enquiries", icon: ClipboardList },
+  { href: "/admin/orders", label: "Orders", icon: ClipboardList },
   { href: "/admin/import", label: "Excel Import", icon: FileSpreadsheet },
 ];
 

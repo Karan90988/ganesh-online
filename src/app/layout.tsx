@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toast";
+import { LanguageProvider } from "@/i18n/context";
+import { getLocale } from "@/i18n/server";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
@@ -35,12 +37,15 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getLocale();
   return (
-    <html lang="en">
+    <html lang={locale}>
       <body className={inter.className}>
-        {children}
-        <Toaster />
+        <LanguageProvider initialLocale={locale}>
+          {children}
+          <Toaster />
+        </LanguageProvider>
       </body>
     </html>
   );

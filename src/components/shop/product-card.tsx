@@ -57,6 +57,11 @@ export function ProductCard({
                 <span className="text-sm font-bold text-foreground">
                   {formatCurrency(opt.input.unitPrice)}
                   <span className="text-xs font-normal text-muted-foreground"> / {opt.input.unitLabel}</span>
+                  {opt.input.packSize == null && product.mrp > opt.input.unitPrice && (
+                    <span className="ml-1 text-xs font-normal text-muted-foreground line-through">
+                      {formatCurrency(product.mrp)}
+                    </span>
+                  )}
                 </span>
                 {opt.subLabel && (
                   <span className="rounded bg-accent px-1.5 py-0.5 text-[11px] font-semibold text-accent-foreground">

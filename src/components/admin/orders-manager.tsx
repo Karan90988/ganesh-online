@@ -47,6 +47,7 @@ function invoiceShareUrl(e: EnquiryDTO): string {
       productName: it.productName,
       quantity: it.quantity,
       unit: it.unit,
+      unitPrice: it.unitPrice,
       lineTotal: it.lineTotal,
     })),
     grandTotal: e.grandTotal,
@@ -164,7 +165,7 @@ export function OrdersManager() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Order Enquiries</h1>
+      <h1 className="text-2xl font-bold">Orders</h1>
 
       <Tabs
         value={type || "all"}
@@ -223,7 +224,7 @@ export function OrdersManager() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Enquiry</TableHead>
+                <TableHead>Order</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Total</TableHead>
@@ -236,7 +237,7 @@ export function OrdersManager() {
               {enquiries.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
-                    No enquiries found.
+                    No orders found.
                   </TableCell>
                 </TableRow>
               )}

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, MessageCircle, Loader2 } from "lucide-react";
+import { CheckCircle2, MessageCircle, Loader2, UserCheck } from "lucide-react";
 import { CartMode, useCart, linesForMode, modeTotal } from "@/store/cart";
+import { useCustomer } from "@/store/customer";
 import { formatCurrency } from "@/lib/utils";
 import { MIN_ORDER_VALUE } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useStoreHydrated } from "@/hooks/use-hydrated";
+import { useT } from "@/i18n/context";
 
 interface SuccessState {
   enquiryCode: string;
@@ -20,6 +22,7 @@ interface SuccessState {
 
 export function CheckoutView({ mode }: { mode: CartMode }) {
   const hydrated = useStoreHydrated();
+  const t = useT();
   const basePath = mode === "WHOLESALE" ? "/wholesale" : "/retail";
   const items = useCart((s) => s.items);
   const lines = linesForMode(items, mode);
@@ -29,6 +32,10 @@ export function CheckoutView({ mode }: { mode: CartMode }) {
   const minValue = MIN_ORDER_VALUE[mode];
   const belowMin = total < minValue;
 
+  const profile = useCustomer((s) => s.profile);
+  const saveProfile = useCustomer((s) => s.saveProfile);
+  const clearProfile = useCustomer((s) => s.clearProfile);
+
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
   const [shopName, setShopName] = useState("");
@@ -36,15 +43,35 @@ export function CheckoutView({ mode }: { mode: CartMode }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<SuccessState | null>(null);
+  const [prefilled, setPrefilled] = useState(false);
+
+  // Pre-fill the form once from the saved on-device profile.
+  useEffect(() => {
+    if (profile && !prefilled) {
+      setName(profile.name || "");
+      setMobile(profile.mobile || "");
+      setShopName(profile.shopName || "");
+      setDeliveryAddress(profile.address || "");
+      setPrefilled(true);
+    }
+  }, [profile, prefilled]);
+
+  function forgetMe() {
+    clearProfile();
+    setName("");
+    setMobile("");
+    setShopName("");
+    setDeliveryAddress("");
+  }
 
   if (!hydrated) return null;
 
   if (!success && lines.length === 0) {
     return (
       <div className="container flex flex-col items-center gap-4 py-20 text-center">
-        <h1 className="text-2xl font-bold">Your cart is empty</h1>
+        <h1 className="text-2xl font-bold">{t("cart.empty")}</h1>
         <Link href={basePath}>
-          <Button size="lg">Browse Products</Button>
+          <Button size="lg">{t("common.browseProducts")}</Button>
         </Link>
       </div>
     );
@@ -57,7 +84,10 @@ export function CheckoutView({ mode }: { mode: CartMode }) {
     if (mode === "RETAIL" && deliveryAddress.trim().length < 10)
       e.deliveryAddress = "Please enter your full delivery address";
     if (belowMin)
-      e.form = `Minimum ${mode === "WHOLESALE" ? "wholesale" : "retail"} order is ${formatCurrency(minValue)}. Add ${formatCurrency(minValue - total)} more.`;
+      e.form = t("checkout.minNotice", {
+        min: formatCurrency(minValue),
+        more: formatCurrency(minValue - total),
+      });
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -84,6 +114,13 @@ export function CheckoutView({ mode }: { mode: CartMode }) {
         throw new Error(json.error || "Could not place order");
       }
       const data = json.data as SuccessState & { enquiryId: string };
+      // Remember details on this device for next time (no login required).
+      saveProfile({
+        name: name.trim(),
+        mobile,
+        shopName: shopName.trim(),
+        address: deliveryAddress.trim(),
+      });
       setSuccess(data);
       clearMode(mode);
       // Best-effort: redirect to WhatsApp + flag sent
@@ -102,21 +139,20 @@ export function CheckoutView({ mode }: { mode: CartMode }) {
     return (
       <div className="container flex flex-col items-center gap-4 py-14 text-center">
         <CheckCircle2 className="h-16 w-16 text-primary" />
-        <h1 className="text-2xl font-bold">Order saved!</h1>
+        <h1 className="text-2xl font-bold">{t("checkout.orderSaved")}</h1>
         <p className="text-muted-foreground">
-          Your enquiry ID is{" "}
+          {t("checkout.yourOrderId")}{" "}
           <span className="font-bold text-foreground">{success.enquiryCode}</span>.
           <br />
-          We&apos;ve recorded your order. Tap below to send it on WhatsApp so we can
-          confirm delivery.
+          {t("checkout.recordedNote")}
         </p>
         <a href={success.whatsappUrl} target="_blank" rel="noopener noreferrer" className="w-full max-w-xs">
           <Button size="lg" className="w-full bg-[#25D366] hover:bg-[#1ebe5d]">
-            <MessageCircle className="h-5 w-5" /> Send on WhatsApp
+            <MessageCircle className="h-5 w-5" /> {t("checkout.sendWhatsApp")}
           </Button>
         </a>
         <Link href={basePath} className="text-sm font-semibold text-primary">
-          Continue shopping
+          {t("common.continueShopping")}
         </Link>
       </div>
     );
@@ -125,22 +161,34 @@ export function CheckoutView({ mode }: { mode: CartMode }) {
   // ---------- Checkout form ----------
   return (
     <div className="container py-4">
-      <h1 className="mb-1 text-2xl font-bold">Checkout</h1>
+      <h1 className="mb-1 text-2xl font-bold">{t("checkout.title")}</h1>
       <p className="mb-4 text-sm text-muted-foreground">
-        {mode === "WHOLESALE" ? "Wholesale Order Enquiry" : "Retail Order Enquiry"} — no
-        online payment. We confirm everything on WhatsApp.
+        {mode === "WHOLESALE" ? t("checkout.wholesaleOrder") : t("checkout.retailOrder")} —{" "}
+        {t("checkout.paymentNote")}
       </p>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="mx-auto max-w-xl space-y-4">
+        {profile && (
+          <div className="flex items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/5 p-3 text-sm">
+            <span className="flex items-center gap-2 font-medium text-foreground">
+              <UserCheck className="h-4 w-4 text-primary" />
+              {t("checkout.welcomeBack", { name: profile.name || "customer" })}
+            </span>
+            <button onClick={forgetMe} className="shrink-0 font-semibold text-primary hover:underline">
+              {t("checkout.notYou")}
+            </button>
+          </div>
+        )}
+
         {/* Form */}
         <div className="space-y-4 rounded-xl border bg-card p-4">
           <div>
-            <Label htmlFor="name">Your Name *</Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. John Doe" />
+            <Label htmlFor="name">{t("checkout.yourName")} *</Label>
+            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("checkout.namePlaceholder")} />
             {errors.name && <p className="mt-1 text-sm text-destructive">{errors.name}</p>}
           </div>
           <div>
-            <Label htmlFor="mobile">Mobile Number *</Label>
+            <Label htmlFor="mobile">{t("checkout.mobileNumber")} *</Label>
             <Input
               id="mobile"
               type="tel"
@@ -148,24 +196,24 @@ export function CheckoutView({ mode }: { mode: CartMode }) {
               maxLength={10}
               value={mobile}
               onChange={(e) => setMobile(e.target.value.replace(/\D/g, ""))}
-              placeholder="10-digit mobile number"
+              placeholder={t("checkout.mobilePlaceholder")}
             />
             {errors.mobile && <p className="mt-1 text-sm text-destructive">{errors.mobile}</p>}
           </div>
 
           {mode === "WHOLESALE" ? (
             <div>
-              <Label htmlFor="shop">Shop Name (optional)</Label>
-              <Input id="shop" value={shopName} onChange={(e) => setShopName(e.target.value)} placeholder="e.g. ABC Stores" />
+              <Label htmlFor="shop">{t("checkout.shopNameOptional")}</Label>
+              <Input id="shop" value={shopName} onChange={(e) => setShopName(e.target.value)} placeholder={t("checkout.shopPlaceholder")} />
             </div>
           ) : (
             <div>
-              <Label htmlFor="address">Delivery Address *</Label>
+              <Label htmlFor="address">{t("checkout.deliveryAddress")} *</Label>
               <Textarea
                 id="address"
                 value={deliveryAddress}
                 onChange={(e) => setDeliveryAddress(e.target.value)}
-                placeholder="House / shop no., building, road, area, landmark, pincode"
+                placeholder={t("checkout.addressPlaceholder")}
                 rows={4}
               />
               {errors.deliveryAddress && (
@@ -179,52 +227,32 @@ export function CheckoutView({ mode }: { mode: CartMode }) {
           )}
         </div>
 
-        {/* Order summary */}
-        <div className="space-y-3">
-          <div className="rounded-xl border bg-card p-4">
-            <h2 className="mb-3 font-bold">Order Summary</h2>
-            <ul className="space-y-2">
-              {lines.map((l, i) => (
-                <li key={l.key} className="flex justify-between gap-2 text-sm">
-                  <span className="flex-1">
-                    {i + 1}. {l.displayName}{" "}
-                    <span className="text-muted-foreground">
-                      × {l.quantity} {l.unitLabel}
-                    </span>
-                  </span>
-                  <span className="font-semibold">
-                    {formatCurrency(l.unitPrice * l.quantity)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <div className="mt-3 flex justify-between border-t pt-3 text-lg font-bold">
-              <span>Grand Total</span>
-              <span>{formatCurrency(total)}</span>
-            </div>
-          </div>
-
-          {belowMin && (
-            <p className="rounded-lg bg-amber-50 p-3 text-center text-sm font-medium text-amber-800">
-              Minimum {mode === "WHOLESALE" ? "wholesale" : "retail"} order is{" "}
-              {formatCurrency(minValue)}. Add {formatCurrency(minValue - total)} more.
-            </p>
-          )}
-          <Button size="lg" className="w-full" onClick={handleSubmit} disabled={submitting || belowMin}>
-            {submitting ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" /> Saving...
-              </>
-            ) : (
-              <>
-                <MessageCircle className="h-5 w-5" /> Place Order on WhatsApp
-              </>
-            )}
-          </Button>
-          <p className="text-center text-xs text-muted-foreground">
-            Your order is saved with us even if you don&apos;t send the WhatsApp message.
-          </p>
+        {/* Total + submit */}
+        <div className="flex items-center justify-between rounded-xl border bg-card p-4 text-lg font-bold">
+          <span>{t("common.grandTotal")}</span>
+          <span>{formatCurrency(total)}</span>
         </div>
+
+        {belowMin && (
+          <p className="rounded-lg bg-amber-50 p-3 text-center text-sm font-medium text-amber-800">
+            {t("checkout.minNotice", {
+              min: formatCurrency(minValue),
+              more: formatCurrency(minValue - total),
+            })}
+          </p>
+        )}
+        <Button size="lg" className="w-full" onClick={handleSubmit} disabled={submitting || belowMin}>
+          {submitting ? (
+            <>
+              <Loader2 className="h-5 w-5 animate-spin" /> ...
+            </>
+          ) : (
+            <>
+              <MessageCircle className="h-5 w-5" /> {t("checkout.placeOrder")}
+            </>
+          )}
+        </Button>
+        <p className="text-center text-xs text-muted-foreground">{t("checkout.savedNote")}</p>
       </div>
     </div>
   );

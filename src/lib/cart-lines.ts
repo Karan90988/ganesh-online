@@ -50,6 +50,8 @@ function packOption(
     buttonLabel: `Add ${label}`,
     priceLabel: `${money(price)} / ${label}`,
     packInfo: `1 ${label} = ${size} ${baseUnit}`,
+    // Effective per-unit rate, e.g. "₹4.50 / packet"
+    subLabel: `${money(price / size)} / ${baseUnit}`,
   };
 }
 
@@ -101,7 +103,13 @@ export function getCartOptions(product: ProductDTO, mode: CartMode): ProductCart
         product.pack2Price!
       );
       if (product.pack2Size! % product.pack1Size! === 0) {
-        opt.packInfo += ` · ${product.pack2Size! / product.pack1Size!} ${product.pack1Label!.toLowerCase()}s`;
+        const outers = product.pack2Size! / product.pack1Size!;
+        opt.packInfo += ` · ${outers} ${product.pack1Label!.toLowerCase()}s`;
+        // Show the breakdown: effective price per outer and per packet.
+        const perOuter = product.pack2Price! / outers;
+        opt.subLabel = `${money(perOuter)} / ${product.pack1Label!.toLowerCase()} · ${money(
+          product.pack2Price! / product.pack2Size!
+        )} / ${UNIT_LABELS[product.unit]}`;
       }
       opts.push(opt);
     }

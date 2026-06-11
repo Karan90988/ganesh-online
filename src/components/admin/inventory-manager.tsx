@@ -13,6 +13,13 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
 import { PRODUCT_STATUS_LABELS, UNIT_LABELS } from "@/lib/constants";
 import { ProductDTO, Pagination } from "@/types";
@@ -23,6 +30,9 @@ export function InventoryManager() {
   const [pagination, setPagination] = useState<Pagination>({ page: 1, pageSize: 20, total: 0, totalPages: 1 });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [lowStockOnly, setLowStockOnly] = useState(false);
+  const [sort, setSort] = useState("");
   const [page, setPage] = useState(1);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -32,6 +42,9 @@ export function InventoryManager() {
     setLoading(true);
     const params = new URLSearchParams({ page: String(page) });
     if (search) params.set("search", search);
+    if (statusFilter) params.set("status", statusFilter);
+    if (lowStockOnly) params.set("lowStock", "1");
+    if (sort) params.set("sort", sort);
     const res = await fetch(`/api/admin/products?${params}`);
     const json = await res.json();
     if (json.success) {
@@ -39,7 +52,7 @@ export function InventoryManager() {
       setPagination(json.data.pagination);
     }
     setLoading(false);
-  }, [page, search]);
+  }, [page, search, statusFilter, lowStockOnly, sort]);
 
   useEffect(() => {
     const t = setTimeout(load, 300);
@@ -95,17 +108,63 @@ export function InventoryManager() {
         </Button>
       </div>
 
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative min-w-[14rem] flex-1">
+          <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Search products"
+            className="pl-11"
+          />
+        </div>
+        <Select
+          value={statusFilter || "all"}
+          onValueChange={(v) => {
+            setStatusFilter(v === "all" ? "" : v);
             setPage(1);
           }}
-          placeholder="Search products"
-          className="pl-11"
-        />
+        >
+          <SelectTrigger className="w-[11rem]">
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            {Object.entries(PRODUCT_STATUS_LABELS).map(([v, l]) => (
+              <SelectItem key={v} value={v}>
+                {l}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button
+          variant={lowStockOnly ? "default" : "outline"}
+          onClick={() => {
+            setLowStockOnly((v) => !v);
+            setPage(1);
+          }}
+        >
+          Low stock only
+        </Button>
+        <Select
+          value={sort || "default"}
+          onValueChange={(v) => {
+            setSort(v === "default" ? "" : v);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger className="w-[14rem]">
+            <SelectValue placeholder="Sort" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="default">Recently updated</SelectItem>
+            <SelectItem value="stock_asc">Stock: Low to High</SelectItem>
+            <SelectItem value="stock_desc">Stock: High to Low</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="rounded-xl border bg-card">

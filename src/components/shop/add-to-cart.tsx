@@ -4,6 +4,8 @@ import { Minus, Plus, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart, CartLineInput } from "@/store/cart";
 import { useToast } from "@/components/ui/toast";
+import { useT } from "@/i18n/context";
+import { QtyInput } from "./qty-input";
 
 interface Props {
   line: CartLineInput;
@@ -22,14 +24,18 @@ export function AddToCart({ line, buttonLabel = "Add", outOfStock, size = "defau
   const addLine = useCart((s) => s.addLine);
   const increment = useCart((s) => s.increment);
   const decrement = useCart((s) => s.decrement);
+  const setQuantity = useCart((s) => s.setQuantity);
   const toast = useToast();
+  const t = useT();
 
   const inCart = items[line.key]?.quantity ?? 0;
+  // Translate the plain "Add"; keep pack-specific labels (e.g. "Add Sack") as-is.
+  const label = buttonLabel === "Add" ? t("common.add") : buttonLabel;
 
   if (outOfStock) {
     return (
       <Button variant="secondary" size={size} disabled className={full ? "w-full" : ""}>
-        Out of Stock
+        {t("common.outOfStock")}
       </Button>
     );
   }
@@ -38,7 +44,6 @@ export function AddToCart({ line, buttonLabel = "Add", outOfStock, size = "defau
     return (
       <Button
         size={size}
-        variant={line.variant.startsWith("WHOLESALE_PACK") ? "outline" : "default"}
         className={full ? "w-full" : ""}
         onClick={() => {
           addLine(line);
@@ -46,7 +51,7 @@ export function AddToCart({ line, buttonLabel = "Add", outOfStock, size = "defau
         }}
       >
         <ShoppingCart className="h-5 w-5" />
-        {buttonLabel}
+        {label}
       </Button>
     );
   }
@@ -64,9 +69,13 @@ export function AddToCart({ line, buttonLabel = "Add", outOfStock, size = "defau
       >
         <Minus className="h-5 w-5" />
       </button>
-      <span className="min-w-8 text-center text-base font-bold">
-        {inCart} <span className="text-xs font-normal opacity-90">{line.unitLabel}</span>
-      </span>
+      <QtyInput
+        value={inCart}
+        min={line.minQty}
+        unitLabel={line.unitLabel}
+        dark
+        onCommit={(q) => setQuantity(line.key, q)}
+      />
       <button
         aria-label="Increase quantity"
         className="flex h-full items-center justify-center px-3 hover:bg-white/10 rounded-md"

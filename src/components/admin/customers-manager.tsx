@@ -19,6 +19,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { CUSTOMER_TYPE_LABELS, ENQUIRY_STATUS_LABELS } from "@/lib/constants";
 import { CustomerDTO, Pagination } from "@/types";
@@ -28,6 +35,7 @@ export function CustomersManager() {
   const [pagination, setPagination] = useState<Pagination>({ page: 1, pageSize: 20, total: 0, totalPages: 1 });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
   const [page, setPage] = useState(1);
   const [detail, setDetail] = useState<CustomerDTO | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
@@ -36,6 +44,7 @@ export function CustomersManager() {
     setLoading(true);
     const params = new URLSearchParams({ page: String(page) });
     if (search) params.set("search", search);
+    if (typeFilter) params.set("type", typeFilter);
     const res = await fetch(`/api/admin/customers?${params}`);
     const json = await res.json();
     if (json.success) {
@@ -43,7 +52,7 @@ export function CustomersManager() {
       setPagination(json.data.pagination);
     }
     setLoading(false);
-  }, [page, search]);
+  }, [page, search, typeFilter]);
 
   useEffect(() => {
     const t = setTimeout(load, 300);
@@ -70,17 +79,38 @@ export function CustomersManager() {
         </a>
       </div>
 
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative min-w-[14rem] flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Search name, mobile, shop"
+            className="pl-11"
+          />
+        </div>
+        <Select
+          value={typeFilter || "all"}
+          onValueChange={(v) => {
+            setTypeFilter(v === "all" ? "" : v);
             setPage(1);
           }}
-          placeholder="Search name, mobile, shop"
-          className="pl-11"
-        />
+        >
+          <SelectTrigger className="w-[11rem]">
+            <SelectValue placeholder="All types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All types</SelectItem>
+            {Object.entries(CUSTOMER_TYPE_LABELS).map(([v, l]) => (
+              <SelectItem key={v} value={v}>
+                {l}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="rounded-xl border bg-card">

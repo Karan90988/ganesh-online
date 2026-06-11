@@ -100,28 +100,123 @@ export const getRelatedProducts = unstable_cache(
   { tags: [CACHE_TAGS.products], revalidate: 120 }
 );
 
-export async function getDashboardStats() {
+/**
+ * Products for the home "Popular products" section, in order:
+ *   1. Hand-picked featured products (admin curated for seasons/festivals),
+ *   2. then best-sellers by quantity sold (excluding ones already shown),
+ *   3. then latest active products to fill any remaining slots.
+ * Featured and top-sellers are shown TOGETHER (featured first).
+ */
+export const getHomeProducts = unstable_cache(
+  async (): Promise<ProductDTO[]> => {
+    const TARGET = 12;
+    const include = { category: { select: { name: true, slug: true } } };
+    const seen = new Set<string>();
+    type P = Awaited<ReturnType<typeof prisma.product.findMany>>[number];
+    const combined: P[] = [];
+    const addAll = (rows: P[]) => {
+      for (const p of rows) {
+        if (combined.length >= TARGET) break;
+        if (!seen.has(p.id)) {
+          seen.add(p.id);
+          combined.push(p);
+        }
+      }
+    };
+
+    // 1) Hand-picked featured products
+    addAll(
+      await prisma.product.findMany({
+        where: { isFeatured: true, status: { in: PUBLIC_STATUSES } },
+        include,
+        orderBy: { updatedAt: "desc" },
+        take: TARGET,
+      })
+    );
+
+    // 2) Best-sellers (excluding any already added)
+    if (combined.length < TARGET) {
+      const top = await prisma.enquiryItem.groupBy({
+        by: ["productId"],
+        _sum: { quantity: true },
+        where: { productId: { not: null } },
+        orderBy: { _sum: { quantity: "desc" } },
+        take: TARGET + seen.size,
+      });
+      const ids = top.map((t) => t.productId).filter((id): id is string => !!id && !seen.has(id));
+      if (ids.length > 0) {
+        const products = await prisma.product.findMany({
+          where: { id: { in: ids }, status: { in: PUBLIC_STATUSES } },
+          include,
+        });
+        const order = new Map(ids.map((id, i) => [id, i]));
+        products.sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99));
+        addAll(products);
+      }
+    }
+
+    // 3) Fill remaining with latest active products
+    if (combined.length < TARGET) {
+      addAll(
+        await prisma.product.findMany({
+          where: { status: { in: PUBLIC_STATUSES }, id: { notIn: Array.from(seen) } },
+          include,
+          orderBy: { createdAt: "desc" },
+          take: TARGET,
+        })
+      );
+    }
+
+    return serialize(combined) as unknown as ProductDTO[];
+  },
+  ["home-products"],
+  { tags: [CACHE_TAGS.products], revalidate: 120 }
+);
+
+export interface DashboardRange {
+  from: Date;
+  to: Date;
+}
+
+export async function getDashboardStats({ from, to }: DashboardRange) {
+  // createdAt window applied to all order-based analytics
+  const range = { gte: from, lte: to };
+  const enquiryWhere = { createdAt: range };
+
   const [
     totalProducts,
     activeProducts,
     outOfStock,
+    inactiveProducts,
     totalCustomers,
+    newCustomersInRange,
     totalEnquiries,
+    newEnquiries,
     wholesaleEnquiries,
     retailEnquiries,
-    newEnquiries,
+    salesRange,
+    valueByType,
+    statusGroups,
     recentEnquiries,
     lowStock,
+    trendRows,
+    topProductRows,
   ] = await Promise.all([
     prisma.product.count(),
     prisma.product.count({ where: { status: ProductStatus.ACTIVE } }),
     prisma.product.count({ where: { status: ProductStatus.OUT_OF_STOCK } }),
+    prisma.product.count({ where: { status: ProductStatus.INACTIVE } }),
     prisma.customer.count(),
-    prisma.enquiry.count(),
-    prisma.enquiry.count({ where: { type: "WHOLESALE" } }),
-    prisma.enquiry.count({ where: { type: "RETAIL" } }),
-    prisma.enquiry.count({ where: { status: "NEW" } }),
+    prisma.customer.count({ where: { createdAt: range } }),
+    prisma.enquiry.count({ where: enquiryWhere }),
+    prisma.enquiry.count({ where: { ...enquiryWhere, status: "NEW" } }),
+    prisma.enquiry.count({ where: { ...enquiryWhere, type: "WHOLESALE" } }),
+    prisma.enquiry.count({ where: { ...enquiryWhere, type: "RETAIL" } }),
+    prisma.enquiry.aggregate({ _sum: { grandTotal: true }, where: enquiryWhere }),
+    prisma.enquiry.groupBy({ by: ["type"], _sum: { grandTotal: true }, where: enquiryWhere }),
+    prisma.enquiry.groupBy({ by: ["status"], _count: { _all: true }, where: enquiryWhere }),
     prisma.enquiry.findMany({
+      where: enquiryWhere,
       orderBy: { createdAt: "desc" },
       take: 8,
       include: { items: { select: { id: true } } },
@@ -132,17 +227,88 @@ export async function getDashboardStats() {
       take: 6,
       select: { id: true, name: true, stockQuantity: true, unit: true },
     }),
+    prisma.enquiry.findMany({
+      where: enquiryWhere,
+      select: { createdAt: true, grandTotal: true },
+    }),
+    prisma.enquiryItem.groupBy({
+      by: ["productName"],
+      _sum: { quantity: true, lineTotal: true },
+      where: { enquiry: { createdAt: range } },
+      orderBy: { _sum: { lineTotal: "desc" } },
+      take: 6,
+    }),
   ]);
+
+  // --- Trend: bucket orders/value by day (<=31d span) or week (longer) ---
+  const dayMs = 86400000;
+  const startDay = new Date(from);
+  startDay.setHours(0, 0, 0, 0);
+  const endDay = new Date(to);
+  endDay.setHours(0, 0, 0, 0);
+  const spanDays = Math.round((endDay.getTime() - startDay.getTime()) / dayMs) + 1;
+  const unit: "day" | "week" = spanDays > 31 ? "week" : "day";
+
+  const mondayOf = (d: Date) => {
+    const x = new Date(d);
+    x.setHours(0, 0, 0, 0);
+    const wd = (x.getDay() + 6) % 7; // 0 = Monday
+    x.setDate(x.getDate() - wd);
+    return x;
+  };
+  const keyOf = (d: Date) => {
+    const x = unit === "week" ? mondayOf(d) : new Date(d);
+    x.setHours(0, 0, 0, 0);
+    return x.toISOString().slice(0, 10);
+  };
+
+  const buckets = new Map<string, { orders: number; value: number }>();
+  let cursor = unit === "week" ? mondayOf(startDay) : new Date(startDay);
+  while (cursor <= endDay) {
+    buckets.set(cursor.toISOString().slice(0, 10), { orders: 0, value: 0 });
+    cursor = new Date(cursor.getTime() + (unit === "week" ? 7 : 1) * dayMs);
+  }
+  for (const row of trendRows) {
+    const b = buckets.get(keyOf(new Date(row.createdAt)));
+    if (b) {
+      b.orders += 1;
+      b.value += Number(row.grandTotal);
+    }
+  }
+  const trend = Array.from(buckets.entries()).map(([date, v]) => ({
+    date,
+    label: new Date(date).toLocaleDateString("en-IN", { day: "numeric", month: "short" }),
+    orders: v.orders,
+    value: v.value,
+  }));
+
+  const salesTotal = Number(salesRange._sum.grandTotal ?? 0);
+  const wholesaleValue = Number(valueByType.find((v) => v.type === "WHOLESALE")?._sum.grandTotal ?? 0);
+  const retailValue = Number(valueByType.find((v) => v.type === "RETAIL")?._sum.grandTotal ?? 0);
 
   return serialize({
     totalProducts,
     activeProducts,
     outOfStock,
+    inactiveProducts,
     totalCustomers,
+    newCustomersInRange,
     totalEnquiries,
+    newEnquiries,
     wholesaleEnquiries,
     retailEnquiries,
-    newEnquiries,
+    salesTotal,
+    avgOrderValue: totalEnquiries > 0 ? Math.round(salesTotal / totalEnquiries) : 0,
+    wholesaleValue,
+    retailValue,
+    statusBreakdown: statusGroups.map((g) => ({ status: g.status, count: g._count._all })),
+    trend,
+    trendUnit: unit,
+    topProducts: topProductRows.map((r) => ({
+      name: r.productName,
+      quantity: Number(r._sum.quantity ?? 0),
+      value: Number(r._sum.lineTotal ?? 0),
+    })),
     recentEnquiries,
     lowStock,
   });

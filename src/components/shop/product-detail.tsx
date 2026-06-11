@@ -61,7 +61,14 @@ export function ProductDetail({ product, mode }: { product: ProductDTO; mode: Ca
               <div key={opt.input.key} className="rounded-xl border p-3">
                 <div className="flex items-baseline justify-between">
                   <div>
-                    <p className="text-lg font-bold text-primary">{opt.priceLabel}</p>
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-lg font-bold text-primary">{opt.priceLabel}</p>
+                      {opt.input.packSize == null && product.mrp > opt.input.unitPrice && (
+                        <span className="text-sm font-medium text-muted-foreground line-through">
+                          MRP {formatCurrency(product.mrp)}
+                        </span>
+                      )}
+                    </div>
                     {opt.packInfo && (
                       <p className="text-xs text-muted-foreground">{opt.packInfo}</p>
                     )}

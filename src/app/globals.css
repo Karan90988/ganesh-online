@@ -35,10 +35,12 @@
     @apply bg-background text-foreground;
     -webkit-tap-highlight-color: transparent;
     text-rendering: optimizeLegibility;
+    overflow-x: hidden; /* prevent stray horizontal scroll / right-side gap */
   }
   /* Larger base font for senior-friendly readability */
   html {
     font-size: 16px;
+    overflow-x: hidden;
   }
 }
 

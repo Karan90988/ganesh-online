@@ -107,6 +107,7 @@ model Product {
   stockQuantity Int           @default(0)
   unit          Unit          @default(PIECE)      // base selling unit (KG, LITRE, PIECE ...)
   status        ProductStatus @default(ACTIVE)
+  isFeatured    Boolean       @default(false)      // hand-picked to show in the home "Popular products" section
   // Relations
   categoryId    String
   category      Category      @relation(fields: [categoryId], references: [id], onDelete: Restrict)
@@ -119,6 +120,7 @@ model Product {
   @@index([slug])
   @@index([categoryId])
   @@index([status])
+  @@index([isFeatured])
   @@map("products")
 }
 

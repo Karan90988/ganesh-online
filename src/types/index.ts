@@ -22,6 +22,7 @@ export interface ProductDTO {
   stockQuantity: number;
   unit: Unit;
   status: ProductStatus;
+  isFeatured?: boolean;
   categoryId: string;
   category?: { name: string; slug: string };
   createdAt?: string;

@@ -6,7 +6,7 @@ import { ListingSkeleton } from "@/components/shop/listing-skeleton";
 
 export const metadata: Metadata = {
   title: "Wholesale Products",
-  description: "Bulk wholesale prices on rice, pulses, oil, sugar and more for shops and businesses. Place your wholesale enquiry on WhatsApp.",
+  description: "Bulk wholesale prices on rice, pulses, oil, sugar and more for shops and businesses. Place your wholesale order on WhatsApp.",
 };
 
 export default function WholesalePage({

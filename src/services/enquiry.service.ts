@@ -19,6 +19,7 @@ export interface CreatedEnquiry {
     productName: string;
     unit: string;
     quantity: number;
+    unitPrice: number;
     lineTotal: number;
   }[];
 }
@@ -161,6 +162,7 @@ export async function createEnquiry(input: CheckoutInput): Promise<CreatedEnquir
       productName: it.productName,
       unit: it.unit,
       quantity: it.quantity,
+      unitPrice: Number(it.unitPrice),
       lineTotal: Number(it.lineTotal),
     })),
   };

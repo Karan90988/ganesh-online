@@ -1,34 +1,39 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Store, ShoppingBag, Truck, Phone, ArrowRight } from "lucide-react";
-import { getCategories, getPublicProducts } from "@/lib/queries";
+import { Store, ShoppingBag, Truck, ArrowRight } from "lucide-react";
+import { getCategories, getHomeProducts } from "@/lib/queries";
 import { SiteFooter } from "@/components/shop/site-footer";
+import { LanguageSwitcher } from "@/components/shop/language-switcher";
 import { Button } from "@/components/ui/button";
+import { getServerT } from "@/i18n/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [categories, { products }] = await Promise.all([
-    getCategories(),
-    getPublicProducts({ pageSize: 8 }),
-  ]);
+  const t = await getServerT();
+  const [categories, products] = await Promise.all([getCategories(), getHomeProducts()]);
 
   return (
     <div className="min-h-screen">
       {/* Top bar */}
       <header className="border-b">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+        <div className="container relative flex h-16 items-center justify-between gap-2 sm:justify-end">
+          {/* Brand — centered on larger screens, left on mobile */}
+          <Link
+            href="/"
+            className="flex min-w-0 items-center gap-2 sm:absolute sm:left-1/2 sm:-translate-x-1/2"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <Store className="h-5 w-5" />
             </span>
-            <span className="text-lg font-bold">Ganesh Trading</span>
-          </div>
-          <Link href="/contact">
-            <Button variant="outline" size="sm">
-              <Phone className="h-4 w-4" /> Contact
-            </Button>
+            <span className="truncate text-sm font-extrabold sm:text-2xl">
+              Ganesh Trading Company
+            </span>
           </Link>
+          {/* Controls — top right */}
+          <div className="flex shrink-0 items-center gap-2">
+            <LanguageSwitcher />
+          </div>
         </div>
       </header>
 
@@ -36,42 +41,45 @@ export default async function HomePage() {
       <section className="bg-gradient-to-b from-accent to-background">
         <div className="container py-10 text-center">
           <h1 className="text-3xl font-extrabold leading-tight sm:text-4xl">
-            Your trusted kirana store,
+            {t("home.heroTitle1")}
             <br />
-            <span className="text-primary">now online</span>
+            <span className="text-primary">{t("home.heroTitle2")}</span>
           </h1>
-          <p className="mx-auto mt-3 max-w-md text-muted-foreground">
-            Browse products, build your order and send it on WhatsApp. Wholesale and
-            retail prices.
-          </p>
+          <p className="mx-auto mt-3 max-w-md text-muted-foreground">{t("home.heroSubtitle")}</p>
 
           {/* Choose mode */}
           <div className="mx-auto mt-8 grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-2">
             <Link
               href="/retail"
-              className="group flex flex-col items-center gap-2 rounded-2xl border-2 border-primary bg-card p-6 shadow-sm transition-transform hover:-translate-y-1"
+              className="group relative flex flex-col items-center gap-2 rounded-2xl border-2 border-primary bg-card p-6 shadow-sm transition-transform hover:-translate-y-1"
             >
+              <span className="absolute right-3 top-3 rounded-full bg-primary px-2.5 py-1 text-xs font-bold text-primary-foreground shadow-sm">
+                {t("home.retailBadge")}
+              </span>
               <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent">
                 <ShoppingBag className="h-7 w-7 text-primary" />
               </span>
-              <span className="text-xl font-bold">Shop Retail</span>
-              <span className="text-sm text-muted-foreground">For homes & families</span>
+              <span className="text-xl font-bold">{t("home.shopRetail")}</span>
+              <span className="text-sm text-muted-foreground">{t("home.shopRetailDesc")}</span>
               <span className="mt-1 flex items-center gap-1 font-semibold text-primary">
-                Start shopping <ArrowRight className="h-4 w-4" />
+                {t("home.startShopping")} <ArrowRight className="h-4 w-4" />
               </span>
             </Link>
 
             <Link
               href="/wholesale"
-              className="group flex flex-col items-center gap-2 rounded-2xl border-2 border-input bg-card p-6 shadow-sm transition-transform hover:-translate-y-1"
+              className="group relative flex flex-col items-center gap-2 rounded-2xl border-2 border-input bg-card p-6 shadow-sm transition-transform hover:-translate-y-1"
             >
+              <span className="absolute right-3 top-3 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800 shadow-sm">
+                {t("home.wholesaleBadge")}
+              </span>
               <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent">
                 <Truck className="h-7 w-7 text-primary" />
               </span>
-              <span className="text-xl font-bold">Shop Wholesale</span>
-              <span className="text-sm text-muted-foreground">For shops & businesses</span>
+              <span className="text-xl font-bold">{t("home.shopWholesale")}</span>
+              <span className="text-sm text-muted-foreground">{t("home.shopWholesaleDesc")}</span>
               <span className="mt-1 flex items-center gap-1 font-semibold text-primary">
-                Bulk prices <ArrowRight className="h-4 w-4" />
+                {t("home.bulkPrices")} <ArrowRight className="h-4 w-4" />
               </span>
             </Link>
           </div>
@@ -80,7 +88,7 @@ export default async function HomePage() {
 
       {/* Categories */}
       <section className="container py-8">
-        <h2 className="mb-4 text-xl font-bold">Shop by category</h2>
+        <h2 className="mb-4 text-xl font-bold">{t("home.shopByCategory")}</h2>
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
           {categories.map((c) => (
             <Link
@@ -100,9 +108,9 @@ export default async function HomePage() {
       {/* Featured products */}
       <section className="container pb-12">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold">Popular products</h2>
+          <h2 className="text-xl font-bold">{t("home.popularProducts")}</h2>
           <Link href="/retail" className="text-sm font-semibold text-primary">
-            View all →
+            {t("common.viewAll")} →
           </Link>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
@@ -127,6 +135,21 @@ export default async function HomePage() {
               </div>
             </Link>
           ))}
+        </div>
+      </section>
+
+      {/* Contact section */}
+      <section className="container pb-12">
+        <div className="rounded-2xl border bg-accent/40 p-6 text-center">
+          <h2 className="text-xl font-bold">{t("contact.title")}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t("contact.subtitle")}</p>
+          <div className="mt-4 flex justify-center">
+            <Link href="/contact">
+              <Button size="lg">
+                {t("common.contact")} <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
 

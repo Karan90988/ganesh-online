@@ -58,7 +58,7 @@ const EMPTY_FORM = {
   // Box type fields (biscuits): outer + box
   outerSize: "",
   outerPrice: "",
-  boxSize: "",
+  outersPerBox: "",
   boxPrice: "",
 };
 
@@ -71,6 +71,8 @@ export function ProductsManager() {
   const [pagination, setPagination] = useState<Pagination>({ page: 1, pageSize: 20, total: 0, totalPages: 1 });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
 
   const [open, setOpen] = useState(false);
@@ -83,6 +85,8 @@ export function ProductsManager() {
     setLoading(true);
     const params = new URLSearchParams({ page: String(page) });
     if (search) params.set("search", search);
+    if (categoryFilter) params.set("categoryId", categoryFilter);
+    if (statusFilter) params.set("status", statusFilter);
     const res = await fetch(`/api/admin/products?${params}`);
     const json = await res.json();
     if (json.success) {
@@ -90,7 +94,7 @@ export function ProductsManager() {
       setPagination(json.data.pagination);
     }
     setLoading(false);
-  }, [page, search]);
+  }, [page, search, categoryFilter, statusFilter]);
 
   useEffect(() => {
     const t = setTimeout(load, 300);
@@ -132,7 +136,9 @@ export function ProductsManager() {
       sackPrice: p.pack1Price != null ? String(p.pack1Price) : "",
       outerSize: p.pack1Size != null ? String(p.pack1Size) : "",
       outerPrice: p.pack1Price != null ? String(p.pack1Price) : "",
-      boxSize: p.pack2Size != null ? String(p.pack2Size) : "",
+      // Box is stored in packets; show it as "outers per box" (box ÷ outer).
+      outersPerBox:
+        p.pack2Size != null && p.pack1Size ? String(Math.round(p.pack2Size / p.pack1Size)) : "",
       boxPrice: p.pack2Price != null ? String(p.pack2Price) : "",
     });
     setFormError("");
@@ -150,17 +156,21 @@ export function ProductsManager() {
       const int = (v: string) => (v ? parseInt(v, 10) : null);
       let bulk: Record<string, unknown>;
       if (form.bulkType === "box") {
-        // Biscuit: Outer + Box, no loose ordering.
+        // Biscuit: Outer (min 1) + optional Box. Box size is stored in packets
+        // = outer size × outers-per-box.
+        const outerSize = int(form.outerSize);
+        const outersPerBox = parseInt(form.outersPerBox || "0", 10);
+        const boxSet = !!outerSize && outersPerBox > 0 && !!form.boxPrice;
         bulk = {
           hasBulkPricing: true,
           wholesaleLooseEnabled: false,
           wholesaleMinQty: 1,
           pack1Label: "Outer",
-          pack1Size: int(form.outerSize),
+          pack1Size: outerSize,
           pack1Price: num(form.outerPrice),
-          pack2Label: "Box",
-          pack2Size: int(form.boxSize),
-          pack2Price: num(form.boxPrice),
+          pack2Label: boxSet ? "Box" : null,
+          pack2Size: boxSet ? outerSize! * outersPerBox : null,
+          pack2Price: boxSet ? num(form.boxPrice) : null,
         };
       } else {
         // Standard: wholesale per-unit (with min qty) + optional Box/Sack.
@@ -224,17 +234,57 @@ export function ProductsManager() {
         </Button>
       </div>
 
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative min-w-[14rem] flex-1">
+          <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Search by name or SKU"
+            className="pl-11"
+          />
+        </div>
+        <Select
+          value={categoryFilter || "all"}
+          onValueChange={(v) => {
+            setCategoryFilter(v === "all" ? "" : v);
             setPage(1);
           }}
-          placeholder="Search by name or SKU"
-          className="pl-11"
-        />
+        >
+          <SelectTrigger className="w-[12rem]">
+            <SelectValue placeholder="All categories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All categories</SelectItem>
+            {categories.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={statusFilter || "all"}
+          onValueChange={(v) => {
+            setStatusFilter(v === "all" ? "" : v);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger className="w-[11rem]">
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            {Object.entries(PRODUCT_STATUS_LABELS).map(([v, l]) => (
+              <SelectItem key={v} value={v}>
+                {l}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="rounded-xl border bg-card">
@@ -478,18 +528,28 @@ export function ProductsManager() {
                       />
                     </div>
                   </div>
+                  {form.sackSize && form.sackPrice && (
+                    <p className="rounded-md bg-accent/60 px-2 py-1 text-xs font-medium text-foreground">
+                      Buying the full {form.sackLabel?.toLowerCase() || "box/sack"} ={" "}
+                      {formatCurrency(
+                        (parseFloat(form.sackPrice) || 0) / (parseInt(form.sackSize, 10) || 1)
+                      )}{" "}
+                      / {form.unit.toLowerCase()}
+                    </p>
+                  )}
                 </div>
               )}
 
               {form.bulkType === "box" && (
                 <div className="mt-3 space-y-3">
                   <p className="text-xs text-muted-foreground">
-                    Two options for customers: <strong>Outer</strong> and <strong>Box</strong>.
-                    No loose ordering. Sizes are in {form.unit.toLowerCase()}s.
+                    For biscuits sold in <strong>outers</strong>. Customers order a minimum
+                    of <strong>1 outer</strong>; if they take a full <strong>box</strong>, the
+                    box price applies. Leave the box fields blank if you only sell by outer.
                   </p>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label>Outer size ({form.unit.toLowerCase()})</Label>
+                      <Label>Packets per outer</Label>
                       <Input
                         type="number"
                         placeholder="12"
@@ -498,7 +558,7 @@ export function ProductsManager() {
                       />
                     </div>
                     <div>
-                      <Label>Outer price</Label>
+                      <Label>Price per outer</Label>
                       <Input
                         type="number"
                         placeholder="54"
@@ -507,12 +567,12 @@ export function ProductsManager() {
                       />
                     </div>
                     <div>
-                      <Label>Box size ({form.unit.toLowerCase()})</Label>
+                      <Label>Outers per box</Label>
                       <Input
                         type="number"
-                        placeholder="48"
-                        value={form.boxSize}
-                        onChange={(e) => setForm((f) => ({ ...f, boxSize: e.target.value }))}
+                        placeholder="4"
+                        value={form.outersPerBox}
+                        onChange={(e) => setForm((f) => ({ ...f, outersPerBox: e.target.value }))}
                       />
                     </div>
                     <div>
@@ -525,6 +585,29 @@ export function ProductsManager() {
                       />
                     </div>
                   </div>
+                  {form.outerSize && form.outersPerBox && (
+                    <p className="text-xs text-muted-foreground">
+                      1 box = {form.outersPerBox} outers ={" "}
+                      {(parseInt(form.outerSize || "0", 10) || 0) *
+                        (parseInt(form.outersPerBox || "0", 10) || 0)}{" "}
+                      {form.unit.toLowerCase()}s
+                    </p>
+                  )}
+                  {form.boxPrice && form.outersPerBox && form.outerSize && (
+                    <p className="rounded-md bg-accent/60 px-2 py-1 text-xs font-medium text-foreground">
+                      Buying the full box ={" "}
+                      {formatCurrency(
+                        (parseFloat(form.boxPrice) || 0) / (parseInt(form.outersPerBox, 10) || 1)
+                      )}{" "}
+                      / outer ·{" "}
+                      {formatCurrency(
+                        (parseFloat(form.boxPrice) || 0) /
+                          (((parseInt(form.outerSize, 10) || 0) *
+                            (parseInt(form.outersPerBox, 10) || 0)) || 1)
+                      )}{" "}
+                      / {form.unit.toLowerCase()}
+                    </p>
+                  )}
                 </div>
               )}
             </div>

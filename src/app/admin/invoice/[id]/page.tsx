@@ -36,6 +36,7 @@ export default async function InvoicePage({ params }: Params) {
       productName: it.productName,
       quantity: it.quantity,
       unit: it.unit,
+      unitPrice: it.unitPrice,
       lineTotal: it.lineTotal,
     })),
     grandTotal: enquiry.grandTotal,

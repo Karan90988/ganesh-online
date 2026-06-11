@@ -17,9 +17,12 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get("search")?.trim() || "";
     const categoryId = searchParams.get("categoryId") || "";
     const status = searchParams.get("status") || "";
+    const lowStock = searchParams.get("lowStock") === "1";
+    const featured = searchParams.get("featured") === "1";
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
 
     const where: Prisma.ProductWhereInput = {};
+    if (featured) where.isFeatured = true;
     if (search) {
       where.OR = [
         { name: { contains: search, mode: "insensitive" } },
@@ -28,13 +31,19 @@ export async function GET(req: NextRequest) {
     }
     if (categoryId) where.categoryId = categoryId;
     if (status) where.status = status as Prisma.ProductWhereInput["status"];
+    if (lowStock) where.stockQuantity = { lte: 10 };
+
+    const sort = searchParams.get("sort") || "";
+    let orderBy: Prisma.ProductOrderByWithRelationInput = { updatedAt: "desc" };
+    if (sort === "stock_asc") orderBy = { stockQuantity: "asc" };
+    else if (sort === "stock_desc") orderBy = { stockQuantity: "desc" };
 
     const [total, products] = await Promise.all([
       prisma.product.count({ where }),
       prisma.product.findMany({
         where,
         include: { category: { select: { name: true } } },
-        orderBy: { updatedAt: "desc" },
+        orderBy,
         skip: (page - 1) * ADMIN_PAGE_SIZE,
         take: ADMIN_PAGE_SIZE,
       }),
