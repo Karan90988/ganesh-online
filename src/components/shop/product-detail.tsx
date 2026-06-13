@@ -69,6 +69,11 @@ export function ProductDetail({ product, mode }: { product: ProductDTO; mode: Ca
                         </span>
                       )}
                     </div>
+                    {opt.input.packSize == null && product.mrp > opt.input.unitPrice && (
+                      <span className="mt-1 inline-block rounded bg-green-100 px-2 py-0.5 text-xs font-bold text-green-700">
+                        You save {formatCurrency(product.mrp - opt.input.unitPrice)}
+                      </span>
+                    )}
                     {opt.packInfo && (
                       <p className="text-xs text-muted-foreground">{opt.packInfo}</p>
                     )}

@@ -23,9 +23,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
+import { ImageUpload } from "./image-upload";
 import { CategoryDTO } from "@/types";
 
-const EMPTY = { name: "", description: "", sortOrder: "0", isActive: true };
+const EMPTY = { name: "", description: "", imageUrl: "", sortOrder: "0", isActive: true };
 
 export function CategoriesManager() {
   const toast = useToast();
@@ -61,6 +62,7 @@ export function CategoriesManager() {
     setForm({
       name: c.name,
       description: c.description ?? "",
+      imageUrl: c.imageUrl ?? "",
       sortOrder: String(c.sortOrder),
       isActive: c.isActive,
     });
@@ -132,8 +134,20 @@ export function CategoriesManager() {
               {categories.map((c) => (
                 <TableRow key={c.id}>
                   <TableCell>
-                    <p className="font-medium">{c.name}</p>
-                    {c.description && <p className="text-xs text-muted-foreground">{c.description}</p>}
+                    <div className="flex items-center gap-3">
+                      {c.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={c.imageUrl} alt="" className="h-10 w-10 rounded-md border object-cover" />
+                      ) : (
+                        <span className="flex h-10 w-10 items-center justify-center rounded-md bg-accent text-sm font-bold text-primary">
+                          {c.name.charAt(0)}
+                        </span>
+                      )}
+                      <div>
+                        <p className="font-medium">{c.name}</p>
+                        {c.description && <p className="text-xs text-muted-foreground">{c.description}</p>}
+                      </div>
+                    </div>
                   </TableCell>
                   <TableCell>{c._count?.products ?? 0}</TableCell>
                   <TableCell>{c.sortOrder}</TableCell>
@@ -172,6 +186,10 @@ export function CategoriesManager() {
             <div>
               <Label>Description</Label>
               <Textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Category Image</Label>
+              <ImageUpload value={form.imageUrl} onChange={(url) => setForm((f) => ({ ...f, imageUrl: url }))} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

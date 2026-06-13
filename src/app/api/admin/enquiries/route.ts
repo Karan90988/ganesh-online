@@ -12,11 +12,19 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get("search")?.trim() || "";
     const type = searchParams.get("type") || "";
     const status = searchParams.get("status") || "";
+    const from = searchParams.get("from") || "";
+    const to = searchParams.get("to") || "";
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
 
     const where: Prisma.EnquiryWhereInput = {};
     if (type) where.type = type as Prisma.EnquiryWhereInput["type"];
     if (status) where.status = status as Prisma.EnquiryWhereInput["status"];
+    // Date range filter (inclusive). `from`/`to` are YYYY-MM-DD.
+    if (from || to) {
+      where.createdAt = {};
+      if (from) where.createdAt.gte = new Date(`${from}T00:00:00`);
+      if (to) where.createdAt.lte = new Date(`${to}T23:59:59.999`);
+    }
     if (search) {
       where.OR = [
         { enquiryCode: { contains: search, mode: "insensitive" } },

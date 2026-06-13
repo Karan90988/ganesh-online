@@ -63,6 +63,8 @@ export function OrdersManager() {
   const [search, setSearch] = useState("");
   const [type, setType] = useState("");
   const [status, setStatus] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<EnquiryDTO | null>(null);
   const [editing, setEditing] = useState(false);
@@ -133,6 +135,8 @@ export function OrdersManager() {
     if (search) params.set("search", search);
     if (type) params.set("type", type);
     if (status) params.set("status", status);
+    if (fromDate) params.set("from", fromDate);
+    if (toDate) params.set("to", toDate);
     const res = await fetch(`/api/admin/enquiries?${params}`);
     const json = await res.json();
     if (json.success) {
@@ -140,7 +144,7 @@ export function OrdersManager() {
       setPagination(json.data.pagination);
     }
     setLoading(false);
-  }, [page, search, type, status]);
+  }, [page, search, type, status, fromDate, toDate]);
 
   useEffect(() => {
     const t = setTimeout(load, 300);
@@ -213,6 +217,46 @@ export function OrdersManager() {
             ))}
           </SelectContent>
         </Select>
+
+        {/* Date range */}
+        <div className="flex items-center gap-2">
+          <Input
+            type="date"
+            aria-label="From date"
+            value={fromDate}
+            max={toDate || undefined}
+            onChange={(e) => {
+              setFromDate(e.target.value);
+              setPage(1);
+            }}
+            className="w-40"
+          />
+          <span className="text-muted-foreground">–</span>
+          <Input
+            type="date"
+            aria-label="To date"
+            value={toDate}
+            min={fromDate || undefined}
+            onChange={(e) => {
+              setToDate(e.target.value);
+              setPage(1);
+            }}
+            className="w-40"
+          />
+          {(fromDate || toDate) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setFromDate("");
+                setToDate("");
+                setPage(1);
+              }}
+            >
+              Clear
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="rounded-xl border bg-card">

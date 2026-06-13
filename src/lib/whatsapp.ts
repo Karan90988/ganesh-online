@@ -73,10 +73,10 @@ export interface WhatsAppOrder {
 export function buildWhatsAppMessage(order: WhatsAppOrder): string {
   const L: string[] = [];
 
-  L.push("*Hello Ganesh Trading Company*");
+  L.push("*Ganesh Trading Company*");
   L.push(DIVIDER);
   L.push(order.type === "WHOLESALE" ? "*Wholesale Order*" : "*Retail Order*");
-  L.push(`Order ID: ${order.enquiryCode}`);
+  L.push(`*Order ID:* ${order.enquiryCode}`);
   L.push(DIVIDER);
 
   // Customer section
@@ -92,11 +92,10 @@ export function buildWhatsAppMessage(order: WhatsAppOrder): string {
 
   // Products — aligned Qty x Rate = Amount table with grand total
   L.push("*Products* (Qty x Rate = Amount)");
-  L.push(productTable(order.items, order.grandTotal));
-  L.push(DIVIDER);
-  L.push("Please contact me regarding delivery.");
   L.push("");
-  L.push("Thank You.");
+  L.push(productTable(order.items, order.grandTotal));
+  L.push("");
+  L.push(DIVIDER);
 
   return L.join("\n");
 }
@@ -117,14 +116,15 @@ export function buildInvoiceMessage(input: InvoiceMessageInput): string {
   const L: string[] = [];
   L.push(`*${input.businessName}*`);
   L.push(DIVIDER);
-  L.push("*INVOICE*");
-  L.push(`Invoice No: ${input.enquiryCode}`);
-  L.push(`Customer: ${input.customerName}`);
+  L.push("*Invoice*");
+  L.push(`*Invoice No:* ${input.enquiryCode}`);
+  L.push(`*Customer:* ${input.customerName}`);
   L.push(DIVIDER);
   L.push("*Products* (Qty x Rate = Amount)");
+  L.push("");
   L.push(productTable(input.items, input.grandTotal));
+  L.push("");
   L.push(DIVIDER);
-  L.push("Thank you for shopping with us!");
   return L.join("\n");
 }
 

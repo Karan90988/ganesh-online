@@ -80,17 +80,24 @@ export async function importProductsFromBuffer(
       }
 
       const sku = deriveSku(parsed.name);
+      const slug = slugify(parsed.name) || sku.toLowerCase();
 
-      // Duplicate within this file → skip
-      if (seenSkus.has(sku)) {
+      // Duplicate within this file → skip (sku & slug derive from the name)
+      if (seenSkus.has(sku) || seenSkus.has(slug)) {
         summary.skipped++;
         continue;
       }
       seenSkus.add(sku);
+      seenSkus.add(slug);
 
       const category = await findOrCreateCategory(parsed.category);
 
-      const existing = await prisma.product.findUnique({ where: { sku } });
+      // Match an existing product by SKU OR slug. Seeded/manual products may
+      // have a custom SKU but a name-based slug, so matching by both avoids a
+      // unique-constraint crash on slug when "creating" a product that exists.
+      const existing = await prisma.product.findFirst({
+        where: { OR: [{ sku }, { slug }] },
+      });
 
       if (existing) {
         // Skip if nothing actually changed (price or image)
@@ -115,24 +122,33 @@ export async function importProductsFromBuffer(
         });
         summary.updated++;
       } else {
-        await prisma.product.create({
-          data: {
-            name: parsed.name,
-            slug: slugify(parsed.name) || sku.toLowerCase(),
-            sku,
-            mrp: parsed.mrp,
-            wholesalePrice: parsed.wholesalePrice,
-            // Retail price defaults to MRP, set manually later by admin
-            retailPrice: parsed.mrp,
-            stockQuantity: 0,
-            unit: Unit.PIECE,
-            status: ProductStatus.ACTIVE, // active by default; admin can deactivate
-            categoryId: category.id,
-            imageUrl:
-              parsed.imageUrl ||
-              `https://placehold.co/400x400/16a34a/ffffff?text=${encodeURIComponent(parsed.name)}`,
-          },
-        });
+        const baseData = {
+          name: parsed.name,
+          mrp: parsed.mrp,
+          wholesalePrice: parsed.wholesalePrice,
+          // Retail price defaults to MRP, set manually later by admin
+          retailPrice: parsed.mrp,
+          stockQuantity: 0,
+          unit: Unit.PIECE,
+          status: ProductStatus.ACTIVE, // active by default; admin can deactivate
+          categoryId: category.id,
+          imageUrl:
+            parsed.imageUrl ||
+            `https://placehold.co/400x400/16a34a/ffffff?text=${encodeURIComponent(parsed.name)}`,
+        };
+        try {
+          await prisma.product.create({ data: { ...baseData, slug, sku } });
+        } catch (e) {
+          // Safety net: if slug/sku still collide, retry once with a unique suffix
+          if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+            const suffix = Math.random().toString(36).slice(2, 6);
+            await prisma.product.create({
+              data: { ...baseData, slug: `${slug}-${suffix}`, sku: `${sku}-${suffix.toUpperCase()}` },
+            });
+          } else {
+            throw e;
+          }
+        }
         summary.created++;
       }
     } catch (err) {

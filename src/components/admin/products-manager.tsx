@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
-import { Plus, Pencil, Trash2, Loader2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Search, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -229,9 +229,16 @@ export function ProductsManager() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Products</h1>
-        <Button onClick={openAdd}>
-          <Plus className="h-5 w-5" /> Add Product
-        </Button>
+        <div className="flex items-center gap-2">
+          <a href="/api/admin/products/export" download>
+            <Button variant="outline">
+              <Download className="h-5 w-5" /> Export Excel
+            </Button>
+          </a>
+          <Button onClick={openAdd}>
+            <Plus className="h-5 w-5" /> Add Product
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">

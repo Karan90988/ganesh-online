@@ -18,6 +18,14 @@ export const categorySchema = z.object({
 });
 export type CategoryInput = z.infer<typeof categorySchema>;
 
+// ---------- Banner (promotion message) ----------
+export const bannerSchema = z.object({
+  text: z.string().min(1, "Message is required").max(120),
+  sortOrder: z.coerce.number().int().min(0).default(0),
+  isActive: z.boolean().default(true),
+});
+export type BannerInput = z.infer<typeof bannerSchema>;
+
 // ---------- Product ----------
 export const productSchema = z.object({
   name: z.string().min(2, "Name is required").max(120),

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('expo', p.dependencies.expo, '| RN', p.dependencies['react-native'], '| router', p.dependencies['expo-router'], '| react', p.dependencies.react\\)\")",
+      "Bash(rm -rf mobile)",
+      "Bash(ls -d mobile)",
+      "Bash(node -e \"const p=require\\('./mobile/package.json'\\); console.log\\('expo', p.dependencies.expo, '| RN', p.dependencies['react-native'], '| router', p.dependencies['expo-router'], '| react', p.dependencies.react\\)\")",
+      "Bash(npx --yes create-expo-app@latest mobile --template expo-template-default@sdk-54)",
+      "Bash(npx --yes expo install zustand @react-native-async-storage/async-storage)",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('expo-image:', p.dependencies['expo-image']||'NOT INSTALLED'\\); console.log\\('vector-icons:', p.dependencies['@expo/vector-icons']||'\\(bundled via expo\\)'\\)\")",
+      "Bash(npx prisma *)"
+    ]
+  }
+}

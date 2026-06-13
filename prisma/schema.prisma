@@ -8,8 +8,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // pooled connection (Neon -pooler host) for the app
+  directUrl = env("DIRECT_URL")   // direct connection for migrations / db push
 }
 
 // ------------------------------------------------------------
@@ -214,4 +215,17 @@ model ImportLog {
 
   @@index([createdAt])
   @@map("import_logs")
+}
+
+// Rotating promotion messages shown on the home/landing of the website & app.
+model Banner {
+  id        String   @id @default(cuid())
+  text      String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+  @@map("banners")
 }

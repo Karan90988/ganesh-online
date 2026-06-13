@@ -1,9 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Store, ShoppingBag, Truck, ArrowRight } from "lucide-react";
+import { Store, ShoppingBag, Truck, ArrowRight, Zap, CalendarClock } from "lucide-react";
 import { getCategories, getHomeProducts } from "@/lib/queries";
 import { SiteFooter } from "@/components/shop/site-footer";
 import { LanguageSwitcher } from "@/components/shop/language-switcher";
+import { PromoBanner } from "@/components/shop/promo-banner";
 import { Button } from "@/components/ui/button";
 import { getServerT } from "@/i18n/server";
 
@@ -47,6 +48,9 @@ export default async function HomePage() {
           </h1>
           <p className="mx-auto mt-3 max-w-md text-muted-foreground">{t("home.heroSubtitle")}</p>
 
+          {/* Rotating promo banner */}
+          <PromoBanner />
+
           {/* Choose mode */}
           <div className="mx-auto mt-8 grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-2">
             <Link
@@ -61,6 +65,9 @@ export default async function HomePage() {
               </span>
               <span className="text-xl font-bold">{t("home.shopRetail")}</span>
               <span className="text-sm text-muted-foreground">{t("home.shopRetailDesc")}</span>
+              <span className="flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-primary">
+                <Zap className="h-3.5 w-3.5" /> {t("home.retailDelivery")}
+              </span>
               <span className="mt-1 flex items-center gap-1 font-semibold text-primary">
                 {t("home.startShopping")} <ArrowRight className="h-4 w-4" />
               </span>
@@ -68,7 +75,7 @@ export default async function HomePage() {
 
             <Link
               href="/wholesale"
-              className="group relative flex flex-col items-center gap-2 rounded-2xl border-2 border-input bg-card p-6 shadow-sm transition-transform hover:-translate-y-1"
+              className="group relative flex flex-col items-center gap-2 rounded-2xl border-2 border-primary bg-card p-6 shadow-sm transition-transform hover:-translate-y-1"
             >
               <span className="absolute right-3 top-3 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800 shadow-sm">
                 {t("home.wholesaleBadge")}
@@ -78,6 +85,9 @@ export default async function HomePage() {
               </span>
               <span className="text-xl font-bold">{t("home.shopWholesale")}</span>
               <span className="text-sm text-muted-foreground">{t("home.shopWholesaleDesc")}</span>
+              <span className="flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-primary">
+                <CalendarClock className="h-3.5 w-3.5" /> {t("home.wholesaleDelivery")}
+              </span>
               <span className="mt-1 flex items-center gap-1 font-semibold text-primary">
                 {t("home.bulkPrices")} <ArrowRight className="h-4 w-4" />
               </span>
@@ -91,15 +101,15 @@ export default async function HomePage() {
         <h2 className="mb-4 text-xl font-bold">{t("home.shopByCategory")}</h2>
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
           {categories.map((c) => (
-            <Link
-              key={c.id}
-              href={`/retail?category=${c.slug}`}
-              className="flex flex-col items-center gap-2 rounded-xl border bg-card p-3 text-center transition-shadow hover:shadow-md"
-            >
-              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-lg font-bold text-primary">
-                {c.name.charAt(0)}
+            <Link key={c.id} href={`/retail?category=${c.slug}`} className="group text-center">
+              <span className="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border bg-accent text-2xl font-bold text-primary transition-shadow group-hover:shadow-md">
+                {c.imageUrl ? (
+                  <Image src={c.imageUrl} alt={c.name} fill sizes="(max-width:768px) 33vw, 16vw" className="object-cover" />
+                ) : (
+                  c.name.charAt(0)
+                )}
               </span>
-              <span className="text-xs font-semibold leading-tight">{c.name}</span>
+              <span className="mt-2 block text-xs font-semibold leading-tight">{c.name}</span>
             </Link>
           ))}
         </div>

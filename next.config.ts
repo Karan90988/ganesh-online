@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Pin the workspace root to this project (the mobile/ app has its own lockfile).
+  outputFileTracingRoot: process.cwd(),
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 86400, // cache optimized images for 1 day

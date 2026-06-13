@@ -69,6 +69,11 @@ export function ProductCard({
                   </span>
                 )}
               </div>
+              {opt.input.packSize == null && product.mrp > opt.input.unitPrice && (
+                <span className="inline-block rounded bg-green-100 px-1.5 py-0.5 text-[11px] font-bold text-green-700">
+                  Save {formatCurrency(product.mrp - opt.input.unitPrice)}
+                </span>
+              )}
               {opt.packInfo && (
                 <p className="text-[11px] text-muted-foreground">{opt.packInfo}</p>
               )}
