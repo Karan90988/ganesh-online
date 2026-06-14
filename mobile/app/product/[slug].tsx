@@ -5,7 +5,7 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { apiGet, apiPost, formatCurrency } from "../../lib/api";
 import { ProductDTO } from "../../lib/types";
-import { GREEN, UNIT_LABELS } from "../../lib/constants";
+import { GREEN, UNIT_LABELS, modeTheme } from "../../lib/constants";
 import { getCartOptions, leadPrice } from "../../lib/cart-lines";
 import { useCart, modeCount, modeTotal } from "../../store/cart";
 import { useT } from "../../lib/i18n";
@@ -67,6 +67,7 @@ export default function ProductDetailScreen() {
 
   const outOfStock = product.status === "OUT_OF_STOCK" || product.stockQuantity <= 0;
   const options = getCartOptions(product, mode);
+  const theme = modeTheme(mode);
 
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
@@ -74,15 +75,15 @@ export default function ProductDetailScreen() {
       <Stack.Screen options={{ title: product.name }} />
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 24 }}>
         {/* Compact image */}
-        <View style={styles.imageWrap}>
-          <Text style={styles.imageInitial}>{product.name.charAt(0).toUpperCase()}</Text>
+        <View style={[styles.imageWrap, { backgroundColor: theme.light }]}>
+          <Text style={[styles.imageInitial, { color: theme.main }]}>{product.name.charAt(0).toUpperCase()}</Text>
           {!!product.imageUrl && (
             <Image source={product.imageUrl} style={styles.imageAbs} contentFit="contain" transition={150} />
           )}
         </View>
 
         <View style={styles.body}>
-          {product.category && <Text style={styles.category}>{product.category.name}</Text>}
+          {product.category && <Text style={[styles.category, { color: theme.main }]}>{product.category.name}</Text>}
           <Text style={styles.name}>{product.name}</Text>
           <View style={styles.badges}>
             <Text style={styles.badgeOutline}>
@@ -101,11 +102,11 @@ export default function ProductDetailScreen() {
               return (
                 <View key={opt.input.key} style={styles.optCard}>
                   <View style={styles.priceRow}>
-                    <Text style={styles.optPrice}>{opt.priceLabel}</Text>
+                    <Text style={[styles.optPrice, { color: theme.main }]}>{opt.priceLabel}</Text>
                     {showMrp && <Text style={styles.mrp}>MRP {formatCurrency(product.mrp)}</Text>}
                   </View>
                   {showMrp && (
-                    <Text style={styles.savePill}>
+                    <Text style={[styles.savePill, { backgroundColor: theme.light, color: theme.main }]}>
                       You save {formatCurrency(product.mrp - opt.input.unitPrice)}
                     </Text>
                   )}
@@ -118,7 +119,7 @@ export default function ProductDetailScreen() {
                         <Text style={styles.addBtnTextDisabled}>{t("outOfStock")}</Text>
                       </View>
                     ) : inCart === 0 ? (
-                      <Pressable style={styles.addBtn} onPress={() => addLine(opt.input)}>
+                      <Pressable style={[styles.addBtn, { backgroundColor: theme.main }]} onPress={() => addLine(opt.input)}>
                         <Text style={styles.addBtnText}>{opt.buttonLabel}</Text>
                       </Pressable>
                     ) : (
@@ -128,6 +129,7 @@ export default function ProductDetailScreen() {
                         unitLabel={opt.input.unitLabel}
                         dark
                         block
+                        color={theme.main}
                         onChange={(q) => setQuantity(opt.input.key, q)}
                       />
                     )}
@@ -157,8 +159,8 @@ export default function ProductDetailScreen() {
                       style={styles.relCard}
                       onPress={() => router.push({ pathname: "/product/[slug]", params: { slug: r.slug } })}
                     >
-                      <View style={styles.relImageWrap}>
-                        <Text style={styles.relInitial}>{r.name.charAt(0).toUpperCase()}</Text>
+                      <View style={[styles.relImageWrap, { backgroundColor: theme.light }]}>
+                        <Text style={[styles.relInitial, { color: theme.main }]}>{r.name.charAt(0).toUpperCase()}</Text>
                         {!!r.imageUrl && (
                           <Image source={r.imageUrl} style={styles.imageAbs} contentFit="cover" transition={150} />
                         )}
@@ -166,7 +168,7 @@ export default function ProductDetailScreen() {
                       <Text numberOfLines={2} style={styles.relName}>
                         {r.name}
                       </Text>
-                      <Text style={styles.relPrice}>
+                      <Text style={[styles.relPrice, { color: theme.main }]}>
                         {formatCurrency(price)}
                         <Text style={styles.relUnit}> / {UNIT_LABELS[r.unit]}</Text>
                       </Text>
@@ -181,7 +183,7 @@ export default function ProductDetailScreen() {
       </ScrollView>
 
       {cartCount > 0 && (
-        <Pressable style={styles.viewCart} onPress={() => router.push("/cart")}>
+        <Pressable style={[styles.viewCart, { backgroundColor: theme.main }]} onPress={() => router.push("/cart")}>
           <Text style={styles.viewCartText}>
             {t("goToCart")} ({cartCount}) · {formatCurrency(cartTotal)}
           </Text>

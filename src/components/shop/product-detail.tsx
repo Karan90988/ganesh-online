@@ -33,7 +33,7 @@ export function ProductDetail({ product, mode }: { product: ProductDTO; mode: Ca
             className="object-cover"
             priority
           />
-          {savings > 0 && <Badge className="absolute left-3 top-3 bg-brand text-base">{savings}% OFF</Badge>}
+          {savings > 0 && <Badge className="absolute left-3 top-3 bg-primary text-base">{savings}% OFF</Badge>}
         </div>
 
         <div>
@@ -76,7 +76,7 @@ export function ProductDetail({ product, mode }: { product: ProductDTO; mode: Ca
                       )}
                     </div>
                     {opt.input.packSize == null && product.mrp > opt.input.unitPrice && (
-                      <span className="mt-1 inline-block rounded bg-green-100 px-2 py-0.5 text-xs font-bold text-green-700">
+                      <span className="mt-1 inline-block rounded bg-accent px-2 py-0.5 text-xs font-bold text-accent-foreground">
                         You save {formatCurrency(product.mrp - opt.input.unitPrice)}
                       </span>
                     )}

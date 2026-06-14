@@ -33,7 +33,7 @@ export function ProductCard({
           sizes="(max-width: 768px) 50vw, 25vw"
           className="object-cover"
         />
-        {savings > 0 && <Badge className="absolute left-2 top-2 bg-brand">{savings}% OFF</Badge>}
+        {savings > 0 && <Badge className="absolute left-2 top-2 bg-primary">{savings}% OFF</Badge>}
         {outOfStock && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/40">
             <span className="rounded-md bg-white px-3 py-1 text-sm font-bold text-gray-800">
@@ -54,7 +54,7 @@ export function ProductCard({
           {options.map((opt) => (
             <div key={opt.input.key} className="space-y-1">
               <div className="flex items-baseline justify-between gap-1">
-                <span className="text-sm font-bold text-foreground">
+                <span className="text-sm font-bold text-primary">
                   {formatCurrency(opt.input.unitPrice)}
                   <span className="text-xs font-normal text-muted-foreground"> / {opt.input.unitLabel}</span>
                   {opt.input.packSize == null && product.mrp > opt.input.unitPrice && (
@@ -70,7 +70,7 @@ export function ProductCard({
                 )}
               </div>
               {opt.input.packSize == null && product.mrp > opt.input.unitPrice && (
-                <span className="inline-block rounded bg-green-100 px-1.5 py-0.5 text-[11px] font-bold text-green-700">
+                <span className="inline-block rounded bg-accent px-1.5 py-0.5 text-[11px] font-bold text-accent-foreground">
                   Save {formatCurrency(product.mrp - opt.input.unitPrice)}
                 </span>
               )}

@@ -4,7 +4,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { apiGet } from "../../lib/api";
-import { GREEN, WHATSAPP_GREEN } from "../../lib/constants";
+import { GREEN, WHATSAPP_GREEN, modeTheme } from "../../lib/constants";
+import { useCart } from "../../store/cart";
 import { useT } from "../../lib/i18n";
 
 interface Business {
@@ -19,6 +20,8 @@ interface Business {
 export default function ContactScreen() {
   const t = useT();
   const insets = useSafeAreaInsets();
+  const mode = useCart((s) => s.mode);
+  const theme = modeTheme(mode);
   const [biz, setBiz] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -36,14 +39,14 @@ export default function ContactScreen() {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      <View style={{ height: insets.top, backgroundColor: GREEN }} />
-      <View style={styles.header}>
+      <View style={{ height: insets.top, backgroundColor: theme.main }} />
+      <View style={[styles.header, { backgroundColor: theme.main }]}>
         <Text style={styles.brand}>Ganesh Trading Company</Text>
       </View>
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={GREEN} />
+          <ActivityIndicator size="large" color={theme.main} />
         </View>
       ) : (
         <View style={styles.body}>
@@ -51,12 +54,12 @@ export default function ContactScreen() {
           <Text style={styles.subtitle}>{t("contactSubtitle")}</Text>
 
           {!!biz?.phone && (
-            <InfoRow icon="call" label={t("phone")} value={biz.phone} />
+            <InfoRow icon="call" label={t("phone")} value={biz.phone} color={theme.main} bg={theme.light} />
           )}
           {!!biz?.address && (
-            <InfoRow icon="location" label={t("address")} value={biz.address} />
+            <InfoRow icon="location" label={t("address")} value={biz.address} color={theme.main} bg={theme.light} />
           )}
-          {!!biz?.hours && <InfoRow icon="time" label={t("hours")} value={biz.hours} />}
+          {!!biz?.hours && <InfoRow icon="time" label={t("hours")} value={biz.hours} color={theme.main} bg={theme.light} />}
 
           <View style={{ gap: 10, marginTop: 8 }}>
             {!!biz?.phone && (
@@ -64,7 +67,7 @@ export default function ContactScreen() {
                 style={[styles.btn, styles.btnOutline]}
                 onPress={() => Linking.openURL(`tel:${biz.phone.replace(/\s/g, "")}`)}
               >
-                <Ionicons name="call" size={18} color={GREEN} />
+                <Ionicons name="call" size={18} color={theme.main} />
                 <Text style={styles.btnOutlineText}>{t("callShop")}</Text>
               </Pressable>
             )}
@@ -73,7 +76,7 @@ export default function ContactScreen() {
                 style={[styles.btn, styles.btnOutline]}
                 onPress={() => Linking.openURL(biz.mapUrl)}
               >
-                <Ionicons name="navigate" size={18} color={GREEN} />
+                <Ionicons name="navigate" size={18} color={theme.main} />
                 <Text style={styles.btnOutlineText}>{t("getDirections")}</Text>
               </Pressable>
             )}
@@ -90,11 +93,11 @@ export default function ContactScreen() {
   );
 }
 
-function InfoRow({ icon, label, value }: { icon: any; label: string; value: string }) {
+function InfoRow({ icon, label, value, color, bg }: { icon: any; label: string; value: string; color: string; bg: string }) {
   return (
     <View style={styles.row}>
-      <View style={styles.iconCircle}>
-        <Ionicons name={icon} size={20} color={GREEN} />
+      <View style={[styles.iconCircle, { backgroundColor: bg }]}>
+        <Ionicons name={icon} size={20} color={color} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={styles.rowLabel}>{label}</Text>

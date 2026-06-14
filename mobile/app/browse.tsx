@@ -183,8 +183,8 @@ export default function BrowseScreen() {
                 style={styles.card}
                 onPress={() => router.push({ pathname: "/product/[slug]", params: { slug: item.slug } })}
               >
-                <View style={styles.imageWrap}>
-                  <Text style={styles.imageInitial}>{item.name.charAt(0).toUpperCase()}</Text>
+                <View style={[styles.imageWrap, { backgroundColor: theme.light }]}>
+                  <Text style={[styles.imageInitial, { color: theme.main }]}>{item.name.charAt(0).toUpperCase()}</Text>
                   {!!item.imageUrl && (
                     <Image source={item.imageUrl} style={styles.imageAbs} contentFit="cover" transition={150} />
                   )}
@@ -198,14 +198,16 @@ export default function BrowseScreen() {
                   <Text numberOfLines={2} style={styles.name}>
                     {item.name}
                   </Text>
-                  <Text style={styles.price}>
+                  <Text style={[styles.price, { color: theme.main }]}>
                     {formatCurrency(price)}
                     <Text style={styles.unit}> / {UNIT_LABELS[item.unit]}</Text>
                   </Text>
                   {showMrp && (
                     <View style={styles.priceMeta}>
                       <Text style={styles.mrp}>MRP {formatCurrency(item.mrp)}</Text>
-                      <Text style={styles.savePill}>Save {formatCurrency(item.mrp - price)}</Text>
+                      <Text style={[styles.savePill, { backgroundColor: theme.light, color: theme.main }]}>
+                        Save {formatCurrency(item.mrp - price)}
+                      </Text>
                     </View>
                   )}
                 </View>

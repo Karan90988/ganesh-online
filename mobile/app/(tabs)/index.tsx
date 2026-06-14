@@ -26,6 +26,7 @@ export default function HomeLanding() {
   const [categories, setCategories] = useState<CategoryDTO[]>([]);
   const [trending, setTrending] = useState<ProductDTO[]>([]);
   const [search, setSearch] = useState("");
+  const [suggestions, setSuggestions] = useState<ProductDTO[]>([]);
 
   useEffect(() => {
     apiGet<CategoryDTO[]>("/api/categories").then(setCategories).catch(() => {});
@@ -34,8 +35,28 @@ export default function HomeLanding() {
       .catch(() => {});
   }, []);
 
+  // Live product suggestions from the DB as the customer types (debounced).
+  useEffect(() => {
+    const q = search.trim();
+    if (q.length < 1) {
+      setSuggestions([]);
+      return;
+    }
+    const tmr = setTimeout(() => {
+      apiGet<{ products: ProductDTO[] }>(`/api/products?search=${encodeURIComponent(q)}&pageSize=8`)
+        .then((d) => setSuggestions(d.products))
+        .catch(() => {});
+    }, 250);
+    return () => clearTimeout(tmr);
+  }, [search]);
+
   const openCategory = (slug: string) => {
     router.push({ pathname: "/browse", params: { category: slug } });
+  };
+  const openProduct = (slug: string) => {
+    setSearch("");
+    setSuggestions([]);
+    router.push({ pathname: "/product/[slug]", params: { slug } });
   };
   const submitSearch = () => {
     const q = search.trim();
@@ -61,24 +82,32 @@ export default function HomeLanding() {
         </View>
       </View>
 
-      {/* Retail / Wholesale section tabs */}
-      <View style={[styles.tabRow, { backgroundColor: theme.main }]}>
-        <SectionTab
-          label={t("shopRetail")}
-          sub={t("retailDelivery")}
-          icon="bag-handle"
-          active={mode === "RETAIL"}
-          color={modeTheme("RETAIL").main}
-          onPress={() => setMode("RETAIL")}
-        />
-        <SectionTab
-          label={t("shopWholesale")}
-          sub={t("wholesaleDelivery")}
-          icon="cube"
-          active={mode === "WHOLESALE"}
-          color={modeTheme("WHOLESALE").main}
-          onPress={() => setMode("WHOLESALE")}
-        />
+      {/* Retail / Wholesale — connected segmented toggle */}
+      <View style={[styles.segmentArea, { backgroundColor: theme.main }]}>
+        <View style={styles.segment}>
+          {(["RETAIL", "WHOLESALE"] as const).map((m) => {
+            const active = mode === m;
+            const c = modeTheme(m).main;
+            return (
+              <Pressable key={m} style={[styles.segItem, active && styles.segItemActive]} onPress={() => setMode(m)}>
+                <Ionicons
+                  name={m === "RETAIL" ? "bag-handle" : "cube"}
+                  size={16}
+                  color={active ? c : "rgba(255,255,255,0.92)"}
+                />
+                <Text style={[styles.segLabel, { color: active ? c : "#fff" }]} numberOfLines={1}>
+                  {m === "RETAIL" ? t("shopRetail") : t("shopWholesale")}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        <View style={styles.deliveryRow}>
+          <Ionicons name={mode === "RETAIL" ? "flash" : "today"} size={13} color="#fff" />
+          <Text style={styles.deliveryText}>
+            {mode === "RETAIL" ? t("retailDelivery") : t("wholesaleDelivery")}
+          </Text>
+        </View>
       </View>
 
       <ScrollView style={{ backgroundColor: theme.light }} contentContainerStyle={{ paddingBottom: 28 }}>
@@ -103,6 +132,28 @@ export default function HomeLanding() {
             </Pressable>
           )}
         </View>
+
+        {/* Live product suggestions */}
+        {search.trim().length > 0 && suggestions.length > 0 && (
+          <View style={styles.suggestBox}>
+            {suggestions.map((p) => (
+              <Pressable key={p.id} style={styles.suggestRow} onPress={() => openProduct(p.slug)}>
+                <View style={[styles.suggestThumb, { backgroundColor: theme.light }]}>
+                  <Text style={[styles.suggestInitial, { color: theme.main }]}>
+                    {p.name.charAt(0).toUpperCase()}
+                  </Text>
+                  {!!p.imageUrl && <Image source={p.imageUrl} style={styles.imageAbs} contentFit="cover" />}
+                </View>
+                <Text numberOfLines={1} style={styles.suggestName}>
+                  {p.name}
+                </Text>
+                <Text style={[styles.suggestPrice, { color: theme.main }]}>
+                  {formatCurrency(leadPrice(p, mode))}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
 
         {/* Shop by category */}
         <Text style={styles.sectionTitle}>{t("shopByCategory")}</Text>
@@ -173,36 +224,6 @@ export default function HomeLanding() {
   );
 }
 
-function SectionTab({
-  label,
-  sub,
-  icon,
-  active,
-  color,
-  onPress,
-}: {
-  label: string;
-  sub: string;
-  icon: any;
-  active: boolean;
-  color: string;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable style={[styles.tab, active && styles.tabActive]} onPress={onPress}>
-      <View style={styles.tabTitleRow}>
-        <Ionicons name={icon} size={16} color={active ? color : "#fff"} />
-        <Text style={[styles.tabLabel, { color: active ? color : "#fff" }]} numberOfLines={1}>
-          {label}
-        </Text>
-      </View>
-      <Text style={[styles.tabSub, { color: active ? "#6b7280" : "rgba(255,255,255,0.85)" }]} numberOfLines={1}>
-        {sub}
-      </Text>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   header: {
@@ -218,16 +239,24 @@ const styles = StyleSheet.create({
   langActive: { backgroundColor: "#fff" },
   langText: { color: "#fff", fontWeight: "700", fontSize: 12 },
 
-  // Section tabs
-  tabRow: { flexDirection: "row", paddingHorizontal: 10, paddingBottom: 10, gap: 8 },
-  tab: { flex: 1, borderRadius: 12, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: "rgba(255,255,255,0.16)", alignItems: "center" },
-  tabActive: { backgroundColor: "#fff" },
-  tabTitleRow: { flexDirection: "row", alignItems: "center", gap: 5 },
-  tabLabel: { fontSize: 14, fontWeight: "800" },
-  tabSub: { fontSize: 10, fontWeight: "600", marginTop: 1 },
+  // Segmented Retail/Wholesale toggle
+  segmentArea: { paddingHorizontal: 12, paddingBottom: 12 },
+  segment: { flexDirection: "row", backgroundColor: "rgba(255,255,255,0.18)", borderRadius: 999, padding: 4 },
+  segItem: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 9, borderRadius: 999 },
+  segItemActive: { backgroundColor: "#fff", shadowColor: "#000", shadowOpacity: 0.12, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, elevation: 2 },
+  segLabel: { fontSize: 14, fontWeight: "800" },
+  deliveryRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, marginTop: 8 },
+  deliveryText: { color: "#fff", fontSize: 12, fontWeight: "700" },
 
   searchWrap: { flexDirection: "row", alignItems: "center", gap: 8, marginHorizontal: 12, marginTop: 12, backgroundColor: "#fff", borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 10, paddingHorizontal: 12, height: 46 },
   searchInput: { flex: 1, fontSize: 15, paddingVertical: 0 },
+
+  suggestBox: { marginHorizontal: 12, marginTop: 6, backgroundColor: "#fff", borderRadius: 12, borderWidth: 1, borderColor: "#e5e7eb", overflow: "hidden" },
+  suggestRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 10, paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "#e5e7eb" },
+  suggestThumb: { width: 36, height: 36, borderRadius: 8, alignItems: "center", justifyContent: "center", overflow: "hidden" },
+  suggestInitial: { fontSize: 16, fontWeight: "800", opacity: 0.6 },
+  suggestName: { flex: 1, fontSize: 14, fontWeight: "600" },
+  suggestPrice: { fontSize: 14, fontWeight: "800" },
 
   sectionTitle: { fontSize: 18, fontWeight: "800", paddingHorizontal: 14, marginTop: 14, marginBottom: 10 },
   catGrid: { flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 10 },

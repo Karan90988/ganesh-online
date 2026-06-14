@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Store, ShoppingBag, Box, Search, TrendingUp, Zap, CalendarClock } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { LanguageSwitcher } from "@/components/shop/language-switcher";
 import { PromoBanner } from "@/components/shop/promo-banner";
 import { Input } from "@/components/ui/input";
@@ -15,29 +16,10 @@ import { CategoryDTO, ProductDTO } from "@/types";
 
 type Mode = "RETAIL" | "WHOLESALE";
 
-// Per-mode chrome: green for retail, saffron for wholesale.
-const THEME = {
-  RETAIL: {
-    header: "bg-primary",
-    page: "bg-green-50",
-    accentText: "text-primary",
-    tileBorder: "border-green-200",
-    icon: ShoppingBag,
-    delivery: "retailDelivery" as const,
-    deliveryIcon: Zap,
-    path: "/retail",
-  },
-  WHOLESALE: {
-    header: "bg-amber-600",
-    page: "bg-amber-50",
-    accentText: "text-amber-700",
-    tileBorder: "border-amber-200",
-    icon: Box,
-    delivery: "wholesaleDelivery" as const,
-    deliveryIcon: CalendarClock,
-    path: "/wholesale",
-  },
-};
+const MODES = {
+  RETAIL: { icon: ShoppingBag, delivery: "retailDelivery", deliveryIcon: Zap, path: "/retail" },
+  WHOLESALE: { icon: Box, delivery: "wholesaleDelivery", deliveryIcon: CalendarClock, path: "/wholesale" },
+} as const;
 
 export function HomeLanding({
   categories,
@@ -50,18 +32,38 @@ export function HomeLanding({
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("RETAIL");
   const [search, setSearch] = useState("");
-  const theme = THEME[mode];
+  const [suggestions, setSuggestions] = useState<ProductDTO[]>([]);
+  const path = MODES[mode].path;
+
+  // Live product suggestions from the DB as the customer types (debounced).
+  useEffect(() => {
+    const q = search.trim();
+    if (q.length < 1) {
+      setSuggestions([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/products?search=${encodeURIComponent(q)}&pageSize=8`);
+        const json = await res.json();
+        if (json?.success) setSuggestions(json.data.products);
+      } catch {
+        /* ignore */
+      }
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const q = search.trim();
-    router.push(q ? `${theme.path}?search=${encodeURIComponent(q)}` : theme.path);
+    router.push(q ? `${path}?search=${encodeURIComponent(q)}` : path);
   };
 
   return (
-    <div className={`min-h-screen ${theme.page} transition-colors`}>
+    <div className={cn("min-h-screen bg-accent/40 transition-colors", mode === "WHOLESALE" && "theme-wholesale")}>
       {/* Themed header */}
-      <header className={`${theme.header} text-white transition-colors`}>
+      <header className="bg-primary text-primary-foreground transition-colors">
         <div className="container flex h-16 items-center justify-between gap-2">
           <Link href="/" className="flex min-w-0 items-center gap-2">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/20">
@@ -69,38 +71,36 @@ export function HomeLanding({
             </span>
             <span className="truncate text-sm font-extrabold sm:text-xl">Ganesh Trading Company</span>
           </Link>
-          <div className="flex shrink-0 items-center gap-2">
-            <LanguageSwitcher />
-          </div>
+          <LanguageSwitcher />
         </div>
 
-        {/* Retail / Wholesale section tabs */}
-        <div className="container grid grid-cols-2 gap-3 pb-4">
-          {(["RETAIL", "WHOLESALE"] as Mode[]).map((m) => {
-            const tm = THEME[m];
-            const active = mode === m;
-            const Icon = tm.icon;
-            const DeliveryIcon = tm.deliveryIcon;
-            return (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setMode(m)}
-                className={`flex flex-col items-center rounded-xl px-4 py-2.5 text-center transition-colors ${
-                  active ? "bg-white shadow-sm" : "bg-white/15 hover:bg-white/25"
-                }`}
-              >
-                <span className={`flex items-center gap-1.5 text-base font-extrabold ${active ? tm.accentText : "text-white"}`}>
+        {/* Retail / Wholesale segmented toggle */}
+        <div className="container pb-4">
+          <div className="mx-auto flex max-w-md gap-1 rounded-full bg-white/20 p-1">
+            {(["RETAIL", "WHOLESALE"] as Mode[]).map((m) => {
+              const active = mode === m;
+              const Icon = MODES[m].icon;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setMode(m)}
+                  className={cn(
+                    "flex flex-1 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-extrabold transition-colors",
+                    active ? "bg-white text-primary shadow-sm" : "text-white hover:bg-white/10"
+                  )}
+                >
                   <Icon className="h-4 w-4" />
                   {m === "RETAIL" ? t("home.shopRetail") : t("home.shopWholesale")}
-                </span>
-                <span className={`mt-0.5 flex items-center gap-1 text-[11px] font-semibold ${active ? "text-muted-foreground" : "text-white/85"}`}>
-                  <DeliveryIcon className="h-3 w-3" />
-                  {t(`home.${tm.delivery}`)}
-                </span>
-              </button>
-            );
-          })}
+                </button>
+              );
+            })}
+          </div>
+          {/* Delivery promise for the active mode */}
+          <p className="mt-2 flex items-center justify-center gap-1.5 text-xs font-semibold text-white/90">
+            {mode === "RETAIL" ? <Zap className="h-3.5 w-3.5" /> : <CalendarClock className="h-3.5 w-3.5" />}
+            {t(`home.${MODES[mode].delivery}`)}
+          </p>
         </div>
       </header>
 
@@ -109,18 +109,49 @@ export function HomeLanding({
         <PromoBanner />
       </div>
 
-      {/* Search */}
+      {/* Search with live suggestions */}
       <section className="container mt-5">
-        <form onSubmit={submitSearch} className="relative mx-auto max-w-2xl">
-          <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t("home.searchPlaceholder")}
-            className="bg-white pl-11"
-            inputMode="search"
-          />
-        </form>
+        <div className="relative mx-auto max-w-2xl">
+          <form onSubmit={submitSearch}>
+            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t("home.searchPlaceholder")}
+              className="bg-white pl-11"
+              inputMode="search"
+            />
+          </form>
+          {search.trim().length > 0 && suggestions.length > 0 && (
+            <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border bg-card shadow-lg">
+              {suggestions.map((p) => (
+                <Link
+                  key={p.id}
+                  href={`${path}/product/${p.slug}`}
+                  onClick={() => {
+                    setSearch("");
+                    setSuggestions([]);
+                  }}
+                  className="flex items-center gap-3 border-b px-3 py-2 last:border-b-0 hover:bg-accent"
+                >
+                  <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-md bg-muted">
+                    <Image
+                      src={p.imageUrl || `https://placehold.co/80x80/16a34a/ffffff?text=${encodeURIComponent(p.name.charAt(0))}`}
+                      alt=""
+                      fill
+                      sizes="36px"
+                      className="object-cover"
+                    />
+                  </span>
+                  <span className="line-clamp-1 flex-1 text-sm font-medium">{p.name}</span>
+                  <span className="text-sm font-bold text-primary">
+                    {formatCurrency(getCartOptions(p, mode)[0].input.unitPrice)}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Categories */}
@@ -128,10 +159,8 @@ export function HomeLanding({
         <h2 className="mb-4 text-xl font-bold">{t("home.shopByCategory")}</h2>
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
           {categories.map((c) => (
-            <Link key={c.id} href={`${theme.path}?category=${c.slug}`} className="group text-center">
-              <span
-                className={`relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border bg-white text-2xl font-bold transition-shadow group-hover:shadow-md ${theme.tileBorder} ${theme.accentText}`}
-              >
+            <Link key={c.id} href={`${path}?category=${c.slug}`} className="group text-center">
+              <span className="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border bg-white text-2xl font-bold text-primary transition-shadow group-hover:shadow-md">
                 {c.imageUrl ? (
                   <Image src={c.imageUrl} alt={c.name} fill sizes="(max-width:768px) 33vw, 16vw" className="object-cover" />
                 ) : (
@@ -148,7 +177,7 @@ export function HomeLanding({
       {trending.length > 0 && (
         <section className="container pb-10">
           <h2 className="mb-4 flex items-center gap-2 text-xl font-bold">
-            <TrendingUp className={`h-5 w-5 ${theme.accentText}`} /> {t("home.trending")}
+            <TrendingUp className="h-5 w-5 text-primary" /> {t("home.trending")}
           </h2>
           <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2">
             {trending.map((p) => {
@@ -157,7 +186,7 @@ export function HomeLanding({
               return (
                 <Link
                   key={p.id}
-                  href={`${theme.path}/product/${p.slug}`}
+                  href={`${path}/product/${p.slug}`}
                   className="w-40 shrink-0 snap-start overflow-hidden rounded-xl border bg-card shadow-sm transition-shadow hover:shadow-md"
                 >
                   <div className="relative aspect-square bg-muted">
@@ -171,10 +200,8 @@ export function HomeLanding({
                   </div>
                   <div className="p-3">
                     <p className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-tight">{p.name}</p>
-                    <p className={`mt-1 font-bold ${theme.accentText}`}>{formatCurrency(lead)}</p>
-                    {showMrp && (
-                      <p className="text-xs text-muted-foreground line-through">{formatCurrency(p.mrp)}</p>
-                    )}
+                    <p className="mt-1 font-bold text-primary">{formatCurrency(lead)}</p>
+                    {showMrp && <p className="text-xs text-muted-foreground line-through">{formatCurrency(p.mrp)}</p>}
                   </div>
                 </Link>
               );

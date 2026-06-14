@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { formatCurrency } from "../../lib/api";
-import { GREEN, MIN_ORDER_VALUE } from "../../lib/constants";
+import { GREEN, MIN_ORDER_VALUE, modeTheme } from "../../lib/constants";
 import { useCart, linesForMode, modeTotal } from "../../store/cart";
 import { useT } from "../../lib/i18n";
 import { QtyInput } from "../../components/qty-input";
@@ -22,12 +22,13 @@ export default function CartTab() {
   const total = modeTotal(items, mode);
   const minValue = MIN_ORDER_VALUE[mode];
   const belowMin = total < minValue;
+  const theme = modeTheme(mode);
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      <View style={{ height: insets.top, backgroundColor: GREEN }} />
-      <View style={styles.header}>
+      <View style={{ height: insets.top, backgroundColor: theme.main }} />
+      <View style={[styles.header, { backgroundColor: theme.main }]}>
         <Text style={styles.brand}>
           {t("cart")} · {mode === "WHOLESALE" ? t("wholesale") : t("retail")}
         </Text>
@@ -36,7 +37,7 @@ export default function CartTab() {
       {lines.length === 0 ? (
         <View style={styles.center}>
           <Text style={styles.emptyTitle}>{t("cartEmpty")}</Text>
-          <Pressable style={styles.primaryBtn} onPress={() => router.replace("/")}>
+          <Pressable style={[styles.primaryBtn, { backgroundColor: theme.main }]} onPress={() => router.replace("/")}>
             <Text style={styles.primaryBtnText}>{t("browse")}</Text>
           </Pressable>
         </View>
@@ -45,8 +46,8 @@ export default function CartTab() {
           <ScrollView contentContainerStyle={{ padding: 12, gap: 10 }}>
             {lines.map((line) => (
               <View key={line.key} style={styles.row}>
-                <View style={styles.thumb}>
-                  <Text style={styles.thumbInitial}>{line.name.charAt(0).toUpperCase()}</Text>
+                <View style={[styles.thumb, { backgroundColor: theme.light }]}>
+                  <Text style={[styles.thumbInitial, { color: theme.main }]}>{line.name.charAt(0).toUpperCase()}</Text>
                   {!!line.imageUrl && (
                     <Image source={line.imageUrl} style={styles.thumbAbs} contentFit="cover" />
                   )}
@@ -62,6 +63,7 @@ export default function CartTab() {
                     value={line.quantity}
                     min={line.minQty}
                     unitLabel={line.unitLabel}
+                    color={theme.main}
                     onChange={(q) => setQuantity(line.key, q)}
                   />
                 </View>
@@ -90,7 +92,7 @@ export default function CartTab() {
                 </Pressable>
               </>
             ) : (
-              <Pressable style={styles.primaryBtn} onPress={() => router.push("/checkout")}>
+              <Pressable style={[styles.primaryBtn, { backgroundColor: theme.main }]} onPress={() => router.push("/checkout")}>
                 <Text style={styles.primaryBtnText}>{t("proceed")}</Text>
               </Pressable>
             )}

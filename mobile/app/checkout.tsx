@@ -12,7 +12,7 @@ import {
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { apiPost, formatCurrency } from "../lib/api";
-import { GREEN, MIN_ORDER_VALUE, WHATSAPP_GREEN } from "../lib/constants";
+import { GREEN, MIN_ORDER_VALUE, WHATSAPP_GREEN, modeTheme } from "../lib/constants";
 import { useCart, linesForMode, modeTotal } from "../store/cart";
 import { useCustomer } from "../store/customer";
 import { useT } from "../lib/i18n";
@@ -38,6 +38,7 @@ export default function CheckoutScreen() {
   const total = modeTotal(items, mode);
   const minValue = MIN_ORDER_VALUE[mode];
   const belowMin = total < minValue;
+  const theme = modeTheme(mode);
 
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
@@ -112,7 +113,7 @@ export default function CheckoutScreen() {
           <Text style={styles.primaryBtnText}>{t("sendWhatsApp")}</Text>
         </Pressable>
         <Pressable onPress={() => router.replace("/")}>
-          <Text style={styles.link}>{t("continueShopping")}</Text>
+          <Text style={[styles.link, { color: theme.main }]}>{t("continueShopping")}</Text>
         </Pressable>
       </View>
     );
@@ -127,10 +128,10 @@ export default function CheckoutScreen() {
       </Text>
 
       {profile && (
-        <View style={styles.welcome}>
+        <View style={[styles.welcome, { backgroundColor: theme.light, borderColor: theme.main }]}>
           <Text style={styles.welcomeText}>{t("welcomeBack", { name: profile.name || "" })}</Text>
           <Pressable onPress={forgetMe}>
-            <Text style={styles.welcomeClear}>{t("notYou")}</Text>
+            <Text style={[styles.welcomeClear, { color: theme.main }]}>{t("notYou")}</Text>
           </Pressable>
         </View>
       )}
@@ -197,7 +198,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 14, padding: 24 },
   subtitle: { color: "#6b7280", fontSize: 13 },
   welcome: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: "#ecfdf5", borderWidth: 1, borderColor: "#a7f3d0", borderRadius: 10, padding: 12 },
-  welcomeText: { fontWeight: "600", color: "#065f46", flex: 1 },
+  welcomeText: { fontWeight: "600", color: "#374151", flex: 1 },
   welcomeClear: { color: GREEN, fontWeight: "700" },
   label: { fontWeight: "700", fontSize: 14 },
   input: { borderWidth: 1, borderColor: "#d1d5db", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12, fontSize: 16 },

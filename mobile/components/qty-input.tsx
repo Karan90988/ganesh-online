@@ -12,6 +12,7 @@ export function QtyInput({
   onChange,
   dark = false,
   block = false,
+  color = GREEN,
 }: {
   value: number;
   min: number;
@@ -19,6 +20,7 @@ export function QtyInput({
   onChange: (qty: number) => void;
   dark?: boolean;
   block?: boolean;
+  color?: string;
 }) {
   const [draft, setDraft] = useState(String(value));
   useEffect(() => setDraft(String(value)), [value]);
@@ -36,12 +38,12 @@ export function QtyInput({
 
   const fg = dark ? "#fff" : "#111827";
   return (
-    <View style={[styles.wrap, dark ? styles.wrapDark : styles.wrapLight, block && styles.block]}>
+    <View style={[styles.wrap, dark ? [styles.wrapDark, { backgroundColor: color }] : styles.wrapLight, block && styles.block]}>
       <Pressable style={styles.btn} onPress={() => onChange(value - 1)} hitSlop={6}>
         <Text style={[styles.sign, { color: fg }]}>−</Text>
       </Pressable>
-      <View style={[styles.middle, dark ? styles.boxDark : styles.boxLight]}>
-        <Ionicons name="pencil" size={11} color={dark ? "rgba(255,255,255,0.9)" : GREEN} style={{ marginRight: 3 }} />
+      <View style={[styles.middle, dark ? styles.boxDark : [styles.boxLight, { borderColor: color }]]}>
+        <Ionicons name="pencil" size={11} color={dark ? "rgba(255,255,255,0.9)" : color} style={{ marginRight: 3 }} />
         <TextInput
           value={draft}
           onChangeText={onType}

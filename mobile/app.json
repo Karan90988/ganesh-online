@@ -8,6 +8,12 @@
     "scheme": "ganeshonline",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/d4d343dc-f8cf-4888-9259-dff6acdcc026"
+    },
     "ios": {
       "supportsTablet": true
     },
