@@ -6,7 +6,7 @@ import Constants from "expo-constants";
  *    so it keeps working even when your WiFi IP changes. Port 3000 = `npm run dev`.
  *  - PROD: set PRODUCTION_API_URL to your deployed Vercel URL.
  */
-const PRODUCTION_API_URL = "https://your-app.vercel.app";
+const PRODUCTION_API_URL = "https://ganesh-online.vercel.app";
 
 function devApiBase(): string {
   // e.g. "192.168.0.104:8081"  (Expo Go / Metro host)

@@ -16,7 +16,7 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { apiGet, formatCurrency } from "../lib/api";
 import { CategoryDTO, Pagination, ProductDTO } from "../lib/types";
-import { GREEN, UNIT_LABELS } from "../lib/constants";
+import { GREEN, UNIT_LABELS, modeTheme } from "../lib/constants";
 import { leadPrice } from "../lib/cart-lines";
 import { useCart, modeCount } from "../store/cart";
 import { useT } from "../lib/i18n";
@@ -24,14 +24,15 @@ import { useT } from "../lib/i18n";
 export default function BrowseScreen() {
   const router = useRouter();
   const t = useT();
-  const params = useLocalSearchParams<{ category?: string }>();
+  const params = useLocalSearchParams<{ category?: string; q?: string }>();
   const mode = useCart((s) => s.mode);
   const setMode = useCart((s) => s.setMode);
   const cartCount = useCart((s) => modeCount(s.items, s.mode));
   const insets = useSafeAreaInsets();
+  const theme = modeTheme(mode);
 
   const [categories, setCategories] = useState<CategoryDTO[]>([]);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState((params.q as string) || "");
   const [category, setCategory] = useState((params.category as string) || "");
   const [products, setProducts] = useState<ProductDTO[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
@@ -86,10 +87,10 @@ export default function BrowseScreen() {
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar style="light" />
-      <View style={{ height: insets.top, backgroundColor: GREEN }} />
+      <View style={{ height: insets.top, backgroundColor: theme.main }} />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.main }]}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={styles.iconBtn}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </Pressable>
@@ -108,13 +109,21 @@ export default function BrowseScreen() {
 
       {/* Mode toggle */}
       <View style={styles.toggleRow}>
-        {(["RETAIL", "WHOLESALE"] as const).map((m) => (
-          <Pressable key={m} onPress={() => setMode(m)} style={[styles.toggle, mode === m && styles.toggleActive]}>
-            <Text style={[styles.toggleText, mode === m && styles.toggleTextActive]}>
-              {m === "RETAIL" ? t("retail") : t("wholesale")}
-            </Text>
-          </Pressable>
-        ))}
+        {(["RETAIL", "WHOLESALE"] as const).map((m) => {
+          const active = mode === m;
+          const c = modeTheme(m);
+          return (
+            <Pressable
+              key={m}
+              onPress={() => setMode(m)}
+              style={[styles.toggle, active && { backgroundColor: c.main, borderColor: c.main }]}
+            >
+              <Text style={[styles.toggleText, active && styles.toggleTextActive]}>
+                {m === "RETAIL" ? t("retail") : t("wholesale")}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
 
       <View style={styles.searchWrap}>
@@ -136,16 +145,22 @@ export default function BrowseScreen() {
 
       <View style={styles.chipsWrap}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-          <Chip label="All" active={category === ""} onPress={() => setCategory("")} />
+          <Chip label="All" active={category === ""} color={theme.main} onPress={() => setCategory("")} />
           {categories.map((c) => (
-            <Chip key={c.id} label={c.name} active={category === c.slug} onPress={() => setCategory(c.slug)} />
+            <Chip
+              key={c.id}
+              label={c.name}
+              active={category === c.slug}
+              color={theme.main}
+              onPress={() => setCategory(c.slug)}
+            />
           ))}
         </ScrollView>
       </View>
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={GREEN} />
+          <ActivityIndicator size="large" color={theme.main} />
         </View>
       ) : (
         <FlatList
@@ -158,7 +173,7 @@ export default function BrowseScreen() {
           onEndReachedThreshold={0.5}
           keyboardShouldPersistTaps="handled"
           ListEmptyComponent={<Text style={styles.empty}>{t("noProducts")}</Text>}
-          ListFooterComponent={loadingMore ? <ActivityIndicator color={GREEN} style={{ marginVertical: 16 }} /> : null}
+          ListFooterComponent={loadingMore ? <ActivityIndicator color={theme.main} style={{ marginVertical: 16 }} /> : null}
           renderItem={({ item }) => {
             const price = leadPrice(item, mode);
             const showMrp = item.mrp > price;
@@ -203,9 +218,19 @@ export default function BrowseScreen() {
   );
 }
 
-function Chip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+function Chip({
+  label,
+  active,
+  color,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  color: string;
+  onPress: () => void;
+}) {
   return (
-    <Pressable onPress={onPress} style={[styles.chip, active && styles.chipActive]}>
+    <Pressable onPress={onPress} style={[styles.chip, active && { backgroundColor: color, borderColor: color }]}>
       <Text style={[styles.chipText, active && styles.chipTextActive]}>{label}</Text>
     </Pressable>
   );

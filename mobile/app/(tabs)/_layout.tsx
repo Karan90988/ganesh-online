@@ -1,19 +1,21 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { GREEN } from "../../lib/constants";
+import { modeTheme } from "../../lib/constants";
 import { useT } from "../../lib/i18n";
 import { useCart, modeCount } from "../../store/cart";
 
 export default function TabLayout() {
   const t = useT();
+  const mode = useCart((s) => s.mode);
   const cartCount = useCart((s) => modeCount(s.items, s.mode));
+  const theme = modeTheme(mode);
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: "#ffffff",
         tabBarInactiveTintColor: "rgba(255,255,255,0.65)",
-        tabBarStyle: { backgroundColor: GREEN, borderTopColor: "#15803d" },
+        tabBarStyle: { backgroundColor: theme.main, borderTopColor: theme.dark },
       }}
     >
       <Tabs.Screen

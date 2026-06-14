@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Image from "next/image";
 import { CartMode } from "@/store/cart";
 import { formatCurrency } from "@/lib/utils";
@@ -10,6 +11,11 @@ import { getCartOptions } from "@/lib/cart-lines";
 import { ProductDTO } from "@/types";
 
 export function ProductDetail({ product, mode }: { product: ProductDTO; mode: CartMode }) {
+  // Record a view (fire-and-forget) to feed the Trending ranking.
+  useEffect(() => {
+    fetch(`/api/products/${product.slug}/click`, { method: "POST" }).catch(() => {});
+  }, [product.slug]);
+
   const outOfStock = product.status === "OUT_OF_STOCK" || product.stockQuantity <= 0;
   const options = getCartOptions(product, mode);
   const lead = options[0].input.unitPrice;

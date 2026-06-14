@@ -45,6 +45,8 @@ const en: Dict = {
   "home.wholesaleBadge": "Best bulk rates",
   "home.shopByCategory": "Shop by category",
   "home.popularProducts": "Popular products",
+  "home.trending": "Trending products",
+  "home.searchPlaceholder": "Search products…",
 
   "cart.title": "Your Cart",
   "cart.empty": "Your cart is empty",
@@ -125,6 +127,8 @@ const hi: Dict = {
   "home.wholesaleBadge": "सर्वोत्तम थोक दाम",
   "home.shopByCategory": "श्रेणी अनुसार खरीदें",
   "home.popularProducts": "लोकप्रिय उत्पाद",
+  "home.trending": "ट्रेंडिंग उत्पाद",
+  "home.searchPlaceholder": "उत्पाद खोजें…",
 
   "cart.title": "आपकी कार्ट",
   "cart.empty": "आपकी कार्ट खाली है",
@@ -205,6 +209,8 @@ const mr: Dict = {
   "home.wholesaleBadge": "उत्तम घाऊक दर",
   "home.shopByCategory": "वर्गानुसार खरेदी",
   "home.popularProducts": "लोकप्रिय उत्पादने",
+  "home.trending": "ट्रेंडिंग उत्पादने",
+  "home.searchPlaceholder": "उत्पादने शोधा…",
 
   "cart.title": "तुमची कार्ट",
   "cart.empty": "तुमची कार्ट रिकामी आहे",

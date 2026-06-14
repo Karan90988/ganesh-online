@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { Image } from "expo-image";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { apiGet, formatCurrency } from "../../lib/api";
+import { apiGet, apiPost, formatCurrency } from "../../lib/api";
 import { ProductDTO } from "../../lib/types";
 import { GREEN, UNIT_LABELS } from "../../lib/constants";
 import { getCartOptions, leadPrice } from "../../lib/cart-lines";
@@ -34,6 +34,8 @@ export default function ProductDetailScreen() {
       const data = await apiGet<{ product: ProductDTO; related: ProductDTO[] }>(`/api/products/${slug}`);
       setProduct(data.product);
       setRelated(data.related || []);
+      // Record a view (fire-and-forget) to feed the Trending ranking.
+      apiPost(`/api/products/${slug}/click`, {}).catch(() => {});
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load");
     } finally {

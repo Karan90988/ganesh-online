@@ -23,6 +23,8 @@ export interface ProductDTO {
   unit: Unit;
   status: ProductStatus;
   isFeatured?: boolean;
+  isTrending?: boolean;
+  clickCount?: number;
   categoryId: string;
   category?: { name: string; slug: string };
   createdAt?: string;

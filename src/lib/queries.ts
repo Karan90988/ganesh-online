@@ -173,6 +173,93 @@ export const getHomeProducts = unstable_cache(
   { tags: [CACHE_TAGS.products], revalidate: 120 }
 );
 
+/**
+ * Products for the home "Trending products" slider, in order:
+ *   1. Hand-picked trending products (admin curated),
+ *   2. then auto-ranked by popularity = clickCount + units sold (combined),
+ * shown TOGETHER (hand-picked first). Mirrors getHomeProducts.
+ */
+export const getTrendingProducts = unstable_cache(
+  async (): Promise<ProductDTO[]> => {
+    const TARGET = 12;
+    const include = { category: { select: { name: true, slug: true } } };
+    const seen = new Set<string>();
+    type P = Awaited<ReturnType<typeof prisma.product.findMany>>[number];
+    const combined: P[] = [];
+    const addAll = (rows: P[]) => {
+      for (const p of rows) {
+        if (combined.length >= TARGET) break;
+        if (!seen.has(p.id)) {
+          seen.add(p.id);
+          combined.push(p);
+        }
+      }
+    };
+
+    // 1) Hand-picked trending products
+    addAll(
+      await prisma.product.findMany({
+        where: { isTrending: true, status: { in: PUBLIC_STATUSES } },
+        include,
+        orderBy: { updatedAt: "desc" },
+        take: TARGET,
+      })
+    );
+
+    // 2) Auto-ranked by popularity score = clickCount + total units sold.
+    if (combined.length < TARGET) {
+      // Units sold per product
+      const sales = await prisma.enquiryItem.groupBy({
+        by: ["productId"],
+        _sum: { quantity: true },
+        where: { productId: { not: null } },
+      });
+      const salesMap = new Map<string, number>();
+      for (const s of sales) {
+        if (s.productId) salesMap.set(s.productId, s._sum.quantity ?? 0);
+      }
+
+      // Candidate pool: most-clicked products + any with sales (union),
+      // excluding ones already added. Cap the pool so we don't scan everything.
+      const topClicked = await prisma.product.findMany({
+        where: { status: { in: PUBLIC_STATUSES }, id: { notIn: Array.from(seen) } },
+        include,
+        orderBy: { clickCount: "desc" },
+        take: 60,
+      });
+      const soldIds = Array.from(salesMap.keys()).filter((id) => !seen.has(id));
+      const missingSold = soldIds.filter((id) => !topClicked.some((p) => p.id === id));
+      const soldProducts = missingSold.length
+        ? await prisma.product.findMany({
+            where: { id: { in: missingSold }, status: { in: PUBLIC_STATUSES } },
+            include,
+          })
+        : [];
+
+      const pool = [...topClicked, ...soldProducts];
+      const score = (p: P) => (p.clickCount ?? 0) + (salesMap.get(p.id) ?? 0);
+      pool.sort((a, b) => score(b) - score(a));
+      addAll(pool);
+    }
+
+    // 3) Fill remaining with latest active products
+    if (combined.length < TARGET) {
+      addAll(
+        await prisma.product.findMany({
+          where: { status: { in: PUBLIC_STATUSES }, id: { notIn: Array.from(seen) } },
+          include,
+          orderBy: { createdAt: "desc" },
+          take: TARGET,
+        })
+      );
+    }
+
+    return serialize(combined) as unknown as ProductDTO[];
+  },
+  ["trending-products"],
+  { tags: [CACHE_TAGS.products], revalidate: 120 }
+);
+
 export interface DashboardRange {
   from: Date;
   to: Date;

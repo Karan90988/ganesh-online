@@ -109,6 +109,8 @@ model Product {
   unit          Unit          @default(PIECE)      // base selling unit (KG, LITRE, PIECE ...)
   status        ProductStatus @default(ACTIVE)
   isFeatured    Boolean       @default(false)      // hand-picked to show in the home "Popular products" section
+  isTrending    Boolean       @default(false)      // hand-picked to show in the home "Trending products" slider
+  clickCount    Int           @default(0)          // product-detail views; used to auto-rank trending
   // Relations
   categoryId    String
   category      Category      @relation(fields: [categoryId], references: [id], onDelete: Restrict)
@@ -122,6 +124,7 @@ model Product {
   @@index([categoryId])
   @@index([status])
   @@index([isFeatured])
+  @@index([isTrending])
   @@map("products")
 }
 

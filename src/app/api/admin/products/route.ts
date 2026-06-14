@@ -19,10 +19,12 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get("status") || "";
     const lowStock = searchParams.get("lowStock") === "1";
     const featured = searchParams.get("featured") === "1";
+    const trending = searchParams.get("trending") === "1";
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
 
     const where: Prisma.ProductWhereInput = {};
     if (featured) where.isFeatured = true;
+    if (trending) where.isTrending = true;
     if (search) {
       where.OR = [
         { name: { contains: search, mode: "insensitive" } },

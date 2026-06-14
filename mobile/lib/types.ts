@@ -24,6 +24,8 @@ export interface ProductDTO {
   unit: Unit;
   status: "ACTIVE" | "INACTIVE" | "OUT_OF_STOCK";
   isFeatured?: boolean;
+  isTrending?: boolean;
+  clickCount?: number;
   categoryId: string;
   category?: { name: string; slug: string };
 }
