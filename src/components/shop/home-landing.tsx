@@ -61,7 +61,7 @@ export function HomeLanding({
   };
 
   return (
-    <div className={cn("min-h-screen bg-accent/40 transition-colors", mode === "WHOLESALE" && "theme-wholesale")}>
+    <div className={cn("min-h-screen bg-accent transition-colors", mode === "WHOLESALE" && "theme-wholesale")}>
       {/* Themed header */}
       <header className="bg-primary text-primary-foreground transition-colors">
         <div className="container flex h-16 items-center justify-between gap-2">
@@ -74,33 +74,28 @@ export function HomeLanding({
           <LanguageSwitcher />
         </div>
 
-        {/* Retail / Wholesale segmented toggle */}
-        <div className="container pb-4">
-          <div className="mx-auto flex max-w-md gap-1 rounded-full bg-white/20 p-1">
-            {(["RETAIL", "WHOLESALE"] as Mode[]).map((m) => {
-              const active = mode === m;
-              const Icon = MODES[m].icon;
-              return (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setMode(m)}
-                  className={cn(
-                    "flex flex-1 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-extrabold transition-colors",
-                    active ? "bg-white text-primary shadow-sm" : "text-white hover:bg-white/10"
-                  )}
-                >
-                  <Icon className="h-4 w-4" />
-                  {m === "RETAIL" ? t("home.shopRetail") : t("home.shopWholesale")}
-                </button>
-              );
-            })}
-          </div>
-          {/* Delivery promise for the active mode */}
-          <p className="mt-2 flex items-center justify-center gap-1.5 text-xs font-semibold text-white/90">
-            {mode === "RETAIL" ? <Zap className="h-3.5 w-3.5" /> : <CalendarClock className="h-3.5 w-3.5" />}
-            {t(`home.${MODES[mode].delivery}`)}
-          </p>
+        {/* Retail / Wholesale — folder tabs (active tab merges into the panel below) */}
+        <div className="container flex items-end gap-2">
+          {(["RETAIL", "WHOLESALE"] as Mode[]).map((m) => {
+            const active = mode === m;
+            const Icon = MODES[m].icon;
+            return (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMode(m)}
+                className={cn(
+                  "flex items-center gap-2 transition-colors",
+                  active
+                    ? "rounded-t-2xl bg-accent px-6 py-3.5 text-lg font-extrabold text-primary"
+                    : "rounded-t-xl bg-white/20 px-5 py-2.5 font-bold text-white hover:bg-white/30"
+                )}
+              >
+                <Icon className={active ? "h-5 w-5" : "h-4 w-4"} />
+                {m === "RETAIL" ? t("home.shopRetail") : t("home.shopWholesale")}
+              </button>
+            );
+          })}
         </div>
       </header>
 

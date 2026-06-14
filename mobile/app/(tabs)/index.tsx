@@ -82,32 +82,34 @@ export default function HomeLanding() {
         </View>
       </View>
 
-      {/* Retail / Wholesale — connected segmented toggle */}
-      <View style={[styles.segmentArea, { backgroundColor: theme.main }]}>
-        <View style={styles.segment}>
-          {(["RETAIL", "WHOLESALE"] as const).map((m) => {
-            const active = mode === m;
-            const c = modeTheme(m).main;
-            return (
-              <Pressable key={m} style={[styles.segItem, active && styles.segItemActive]} onPress={() => setMode(m)}>
-                <Ionicons
-                  name={m === "RETAIL" ? "bag-handle" : "cube"}
-                  size={16}
-                  color={active ? c : "rgba(255,255,255,0.92)"}
-                />
-                <Text style={[styles.segLabel, { color: active ? c : "#fff" }]} numberOfLines={1}>
-                  {m === "RETAIL" ? t("shopRetail") : t("shopWholesale")}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-        <View style={styles.deliveryRow}>
-          <Ionicons name={mode === "RETAIL" ? "flash" : "today"} size={13} color="#fff" />
-          <Text style={styles.deliveryText}>
-            {mode === "RETAIL" ? t("retailDelivery") : t("wholesaleDelivery")}
-          </Text>
-        </View>
+      {/* Retail / Wholesale — folder tabs (active tab merges into content below) */}
+      <View style={[styles.tabsBar, { backgroundColor: theme.main }]}>
+        {(["RETAIL", "WHOLESALE"] as const).map((m) => {
+          const active = mode === m;
+          const c = modeTheme(m);
+          return (
+            <Pressable
+              key={m}
+              onPress={() => setMode(m)}
+              style={[
+                styles.tab,
+                active ? [styles.tabActive, { backgroundColor: theme.light }] : styles.tabInactive,
+              ]}
+            >
+              <Ionicons
+                name={m === "RETAIL" ? "bag-handle" : "cube"}
+                size={active ? 18 : 15}
+                color={active ? c.main : "rgba(255,255,255,0.92)"}
+              />
+              <Text
+                style={[active ? styles.tabActiveText : styles.tabInactiveText, active && { color: c.main }]}
+                numberOfLines={1}
+              >
+                {m === "RETAIL" ? t("shopRetail") : t("shopWholesale")}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
 
       <ScrollView style={{ backgroundColor: theme.light }} contentContainerStyle={{ paddingBottom: 28 }}>
@@ -239,14 +241,13 @@ const styles = StyleSheet.create({
   langActive: { backgroundColor: "#fff" },
   langText: { color: "#fff", fontWeight: "700", fontSize: 12 },
 
-  // Segmented Retail/Wholesale toggle
-  segmentArea: { paddingHorizontal: 12, paddingBottom: 12 },
-  segment: { flexDirection: "row", backgroundColor: "rgba(255,255,255,0.18)", borderRadius: 999, padding: 4 },
-  segItem: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 9, borderRadius: 999 },
-  segItemActive: { backgroundColor: "#fff", shadowColor: "#000", shadowOpacity: 0.12, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, elevation: 2 },
-  segLabel: { fontSize: 14, fontWeight: "800" },
-  deliveryRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, marginTop: 8 },
-  deliveryText: { color: "#fff", fontSize: 12, fontWeight: "700" },
+  // Folder-tab Retail/Wholesale toggle
+  tabsBar: { flexDirection: "row", alignItems: "flex-end", gap: 8, paddingHorizontal: 12, paddingTop: 6 },
+  tab: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderTopLeftRadius: 16, borderTopRightRadius: 16, paddingHorizontal: 14 },
+  tabActive: { flex: 1.2, paddingVertical: 14 },
+  tabInactive: { flex: 1, paddingVertical: 10, backgroundColor: "rgba(255,255,255,0.18)" },
+  tabActiveText: { fontSize: 17, fontWeight: "900" },
+  tabInactiveText: { fontSize: 14, fontWeight: "700", color: "rgba(255,255,255,0.95)" },
 
   searchWrap: { flexDirection: "row", alignItems: "center", gap: 8, marginHorizontal: 12, marginTop: 12, backgroundColor: "#fff", borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 10, paddingHorizontal: 12, height: 46 },
   searchInput: { flex: 1, fontSize: 15, paddingVertical: 0 },
