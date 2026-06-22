@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Ganesh Trading Company",
+    "name": "GaneshNow",
     "slug": "ganesh-online",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -38,12 +38,12 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
+          "image": "./assets/images/splash.png",
+          "imageWidth": 300,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#ffffff"
           }
         }
       ]
