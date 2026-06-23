@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "25b249af-30f9-4471-86dc-6cbe715d67b3"
+      }
+    },
+    "android": {
+      "package": "com.karan90988.ganeshtradingcompany"
+    }
+  }
+}
