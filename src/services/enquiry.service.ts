@@ -3,7 +3,8 @@ import { randomUUID } from "crypto";
 import { CustomerType, Prisma, Unit } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { CheckoutInput } from "@/lib/validations";
-import { UNIT_LABELS, MIN_ORDER_VALUE } from "@/lib/constants";
+import { UNIT_LABELS } from "@/lib/constants";
+import { getSettings, deliveryChargeFor } from "@/lib/settings";
 
 export interface CreatedEnquiry {
   id: string;
@@ -15,6 +16,7 @@ export interface CreatedEnquiry {
   deliveryArea: string | null;
   deliveryAddress: string | null;
   grandTotal: number;
+  deliveryCharge: number;
   items: {
     productName: string;
     unit: string;
@@ -96,15 +98,21 @@ export async function createEnquiry(input: CheckoutInput): Promise<CreatedEnquir
     };
   });
 
-  const grandTotal = lineItems.reduce((sum, it) => sum + Number(it.lineTotal), 0);
+  const subtotal = lineItems.reduce((sum, it) => sum + Number(it.lineTotal), 0);
 
-  // Enforce minimum order value (retail vs wholesale)
-  const minValue = MIN_ORDER_VALUE[input.type];
-  if (grandTotal < minValue) {
+  // Admin-configured delivery charges + minimum order values.
+  const settings = await getSettings();
+
+  // Wholesale enforces a minimum order value; retail has no floor.
+  if (input.type === "WHOLESALE" && subtotal < settings.wholesaleMinOrderValue) {
     throw new Error(
-      `Minimum ${input.type === "WHOLESALE" ? "wholesale" : "retail"} order is ₹${minValue}. Please add more items.`
+      `Minimum wholesale order is ₹${settings.wholesaleMinOrderValue}. Please add more items.`
     );
   }
+
+  // Retail pays a delivery charge below the free-delivery threshold.
+  const deliveryCharge = deliveryChargeFor(input.type, subtotal, settings);
+  const grandTotal = subtotal + deliveryCharge;
 
   const enquiry = await prisma.$transaction(async (tx) => {
     // Upsert customer keyed by mobile number
@@ -134,6 +142,7 @@ export async function createEnquiry(input: CheckoutInput): Promise<CreatedEnquir
         deliveryArea: input.type === "RETAIL" ? input.deliveryArea ?? null : null,
         deliveryAddress: input.type === "RETAIL" ? input.deliveryAddress || null : null,
         grandTotal: new Prisma.Decimal(grandTotal),
+        deliveryCharge: new Prisma.Decimal(deliveryCharge),
         customerId: customer.id,
         items: { create: lineItems },
       },
@@ -158,6 +167,7 @@ export async function createEnquiry(input: CheckoutInput): Promise<CreatedEnquir
     deliveryArea: enquiry.deliveryArea,
     deliveryAddress: enquiry.deliveryAddress,
     grandTotal: Number(enquiry.grandTotal),
+    deliveryCharge: Number(enquiry.deliveryCharge),
     items: enquiry.items.map((it) => ({
       productName: it.productName,
       unit: it.unit,

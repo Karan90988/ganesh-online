@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart, Store } from "lucide-react";
+import Image from "next/image";
+import { ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CartMode, useCart, modeCount } from "@/store/cart";
 import { useStoreHydrated } from "@/hooks/use-hydrated";
@@ -23,9 +24,13 @@ export function SiteHeader({ mode }: { mode: CartMode }) {
           href="/"
           className="flex min-w-0 items-center gap-2 sm:absolute sm:left-1/2 sm:-translate-x-1/2"
         >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Store className="h-5 w-5" />
-          </span>
+          <Image
+            src="/logo.png"
+            alt="Ganesh Trading Company"
+            width={36}
+            height={36}
+            className="h-9 w-9 shrink-0 rounded-lg object-cover"
+          />
           <span className="truncate text-sm font-extrabold leading-tight sm:text-2xl">
             Ganesh Trading Company
           </span>

@@ -26,6 +26,14 @@ export const bannerSchema = z.object({
 });
 export type BannerInput = z.infer<typeof bannerSchema>;
 
+// ---------- Store settings (delivery + minimum order) ----------
+export const settingsSchema = z.object({
+  retailFreeDeliveryThreshold: z.coerce.number().int().min(0).max(1_000_000),
+  retailDeliveryCharge: z.coerce.number().int().min(0).max(100_000),
+  wholesaleMinOrderValue: z.coerce.number().int().min(0).max(10_000_000),
+});
+export type SettingsInput = z.infer<typeof settingsSchema>;
+
 // ---------- Product ----------
 export const productSchema = z.object({
   name: z.string().min(2, "Name is required").max(120),

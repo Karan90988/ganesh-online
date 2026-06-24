@@ -14,10 +14,10 @@ export function LanguageSwitcher() {
         aria-label="Language"
         value={locale}
         onChange={(e) => setLocale(e.target.value as Locale)}
-        className="h-9 cursor-pointer rounded-lg border-2 border-input bg-background pl-7 pr-2 text-sm font-semibold outline-none"
+        className="h-9 cursor-pointer rounded-lg border-2 border-input bg-background pl-7 pr-2 text-sm font-semibold text-foreground outline-none"
       >
         {LOCALES.map((l) => (
-          <option key={l} value={l}>
+          <option key={l} value={l} className="text-foreground">
             {LOCALE_LABELS[l]}
           </option>
         ))}

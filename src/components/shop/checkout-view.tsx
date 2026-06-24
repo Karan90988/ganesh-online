@@ -6,7 +6,7 @@ import { CheckCircle2, MessageCircle, Loader2, UserCheck } from "lucide-react";
 import { CartMode, useCart, linesForMode, modeTotal } from "@/store/cart";
 import { useCustomer } from "@/store/customer";
 import { formatCurrency } from "@/lib/utils";
-import { MIN_ORDER_VALUE } from "@/lib/constants";
+import { useStoreSettings } from "@/hooks/use-settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,9 +28,14 @@ export function CheckoutView({ mode }: { mode: CartMode }) {
   const lines = linesForMode(items, mode);
   const total = modeTotal(items, mode);
   const clearMode = useCart((s) => s.clearMode);
+  const settings = useStoreSettings();
 
-  const minValue = MIN_ORDER_VALUE[mode];
-  const belowMin = total < minValue;
+  const isRetail = mode === "RETAIL";
+  const deliveryCharge =
+    isRetail && total < settings.retailFreeDeliveryThreshold ? settings.retailDeliveryCharge : 0;
+  const grand = total + deliveryCharge;
+  const minValue = settings.wholesaleMinOrderValue;
+  const belowMin = !isRetail && total < minValue;
 
   const profile = useCustomer((s) => s.profile);
   const saveProfile = useCustomer((s) => s.saveProfile);
@@ -228,9 +233,32 @@ export function CheckoutView({ mode }: { mode: CartMode }) {
         </div>
 
         {/* Total + submit */}
-        <div className="flex items-center justify-between rounded-xl border bg-card p-4 text-lg font-bold">
-          <span>{t("common.grandTotal")}</span>
-          <span>{formatCurrency(total)}</span>
+        <div className="rounded-xl border bg-card p-4">
+          {isRetail ? (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">{t("common.subtotal")}</span>
+                <span>{formatCurrency(total)}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">{t("common.delivery")}</span>
+                {deliveryCharge > 0 ? (
+                  <span>{formatCurrency(deliveryCharge)}</span>
+                ) : (
+                  <span className="font-bold text-primary">{t("common.free")}</span>
+                )}
+              </div>
+              <div className="flex items-center justify-between border-t pt-1.5 text-lg font-bold">
+                <span>{t("common.grandTotal")}</span>
+                <span>{formatCurrency(grand)}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between text-lg font-bold">
+              <span>{t("common.grandTotal")}</span>
+              <span>{formatCurrency(total)}</span>
+            </div>
+          )}
         </div>
 
         {belowMin && (

@@ -5,9 +5,9 @@ import Image from "next/image";
 import { Minus, Plus, Trash2, ShoppingCart, ArrowRight } from "lucide-react";
 import { CartMode, useCart, linesForMode, modeTotal } from "@/store/cart";
 import { formatCurrency } from "@/lib/utils";
-import { MIN_ORDER_VALUE } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { useStoreHydrated } from "@/hooks/use-hydrated";
+import { useStoreSettings } from "@/hooks/use-settings";
 import { useT } from "@/i18n/context";
 import { QtyInput } from "./qty-input";
 
@@ -22,9 +22,15 @@ export function CartView({ mode }: { mode: CartMode }) {
   const decrement = useCart((s) => s.decrement);
   const setQuantity = useCart((s) => s.setQuantity);
   const removeLine = useCart((s) => s.removeLine);
+  const settings = useStoreSettings();
 
-  const minValue = MIN_ORDER_VALUE[mode];
-  const belowMin = total < minValue;
+  const isRetail = mode === "RETAIL";
+  const deliveryCharge =
+    isRetail && total < settings.retailFreeDeliveryThreshold ? settings.retailDeliveryCharge : 0;
+  const grand = total + deliveryCharge;
+  const minValue = settings.wholesaleMinOrderValue;
+  const belowMin = !isRetail && total < minValue;
+  const freeDeliveryGap = settings.retailFreeDeliveryThreshold - total;
 
   if (!hydrated) return null;
 
@@ -96,11 +102,38 @@ export function CartView({ mode }: { mode: CartMode }) {
 
       {/* Summary */}
       <div className="mt-5 rounded-xl border bg-card p-4">
-        <div className="flex items-center justify-between text-lg">
-          <span className="font-semibold">{t("common.grandTotal")}</span>
-          <span className="font-extrabold">{formatCurrency(total)}</span>
-        </div>
+        {isRetail ? (
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">{t("common.subtotal")}</span>
+              <span>{formatCurrency(total)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">{t("common.delivery")}</span>
+              {deliveryCharge > 0 ? (
+                <span>{formatCurrency(deliveryCharge)}</span>
+              ) : (
+                <span className="font-bold text-primary">{t("common.free")}</span>
+              )}
+            </div>
+            <div className="flex items-center justify-between border-t pt-1.5 text-lg">
+              <span className="font-semibold">{t("common.grandTotal")}</span>
+              <span className="font-extrabold">{formatCurrency(grand)}</span>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between text-lg">
+            <span className="font-semibold">{t("common.grandTotal")}</span>
+            <span className="font-extrabold">{formatCurrency(total)}</span>
+          </div>
+        )}
         <p className="mt-1 text-xs text-muted-foreground">{t("cart.priceNote")}</p>
+
+        {isRetail && deliveryCharge > 0 && (
+          <p className="mt-3 rounded-lg bg-accent/60 p-2.5 text-center text-xs font-medium text-accent-foreground">
+            {t("cart.freeDeliveryHint", { more: formatCurrency(freeDeliveryGap) })}
+          </p>
+        )}
 
         {belowMin ? (
           <>

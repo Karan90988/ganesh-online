@@ -31,7 +31,7 @@ interface TableRow {
  * columns and a right-aligned grand total. WhatsApp renders text inside ``` in
  * a fixed-width font, so the padded columns line up on every device.
  */
-function productTable(items: TableRow[], grandTotal: number): string {
+function productTable(items: TableRow[], grandTotal: number, deliveryCharge = 0): string {
   const money = (n: number) => `₹${rupee(n)}`;
   const qty = items.map((it) => String(it.quantity));
   const rate = items.map((it) => money(it.unitPrice));
@@ -48,6 +48,11 @@ function productTable(items: TableRow[], grandTotal: number): string {
     rows.push(`   ${qty[i].padStart(qtyW)} x ${rate[i].padStart(rateW)} = ${amt[i].padStart(amtW)}`);
   });
   rows.push("─".repeat(leftW + 3 + amtW));
+  if (deliveryCharge > 0) {
+    const subtotal = grandTotal - deliveryCharge;
+    rows.push(`${"SUBTOTAL".padEnd(leftW)} = ${money(subtotal).padStart(amtW)}`);
+    rows.push(`${"DELIVERY".padEnd(leftW)} = ${money(deliveryCharge).padStart(amtW)}`);
+  }
   rows.push(`${"GRAND TOTAL".padEnd(leftW)} = ${money(grandTotal).padStart(amtW)}`);
 
   return "```\n" + rows.join("\n") + "\n```";
@@ -63,6 +68,7 @@ export interface WhatsAppOrder {
   deliveryAddress?: string | null;
   items: WhatsAppItem[];
   grandTotal: number;
+  deliveryCharge?: number;
 }
 
 /**
@@ -93,7 +99,7 @@ export function buildWhatsAppMessage(order: WhatsAppOrder): string {
   // Products — aligned Qty x Rate = Amount table with grand total
   L.push("*Products* (Qty x Rate = Amount)");
   L.push("");
-  L.push(productTable(order.items, order.grandTotal));
+  L.push(productTable(order.items, order.grandTotal, order.deliveryCharge ?? 0));
   L.push("");
   L.push(DIVIDER);
 
@@ -106,6 +112,7 @@ export interface InvoiceMessageInput {
   customerName: string;
   items: { productName: string; quantity: number; unit: string; unitPrice: number; lineTotal: number }[];
   grandTotal: number;
+  deliveryCharge?: number;
 }
 
 /**
@@ -122,7 +129,7 @@ export function buildInvoiceMessage(input: InvoiceMessageInput): string {
   L.push(DIVIDER);
   L.push("*Products* (Qty x Rate = Amount)");
   L.push("");
-  L.push(productTable(input.items, input.grandTotal));
+  L.push(productTable(input.items, input.grandTotal, input.deliveryCharge ?? 0));
   L.push("");
   L.push(DIVIDER);
   return L.join("\n");

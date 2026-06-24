@@ -45,13 +45,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         });
       }
 
-      // Update kept items
-      let grandTotal = 0;
+      // Update kept items. Subtotal = sum of line items; the stored delivery
+      // charge is preserved so the grand total stays consistent after edits.
+      let subtotal = 0;
       for (const i of items) {
         const existing = existingById.get(i.id)!;
         const unitPrice = i.unitPrice ?? Number(existing.unitPrice);
         const lineTotal = unitPrice * i.quantity;
-        grandTotal += lineTotal;
+        subtotal += lineTotal;
         await tx.enquiryItem.update({
           where: { id: i.id },
           data: {
@@ -62,6 +63,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         });
       }
 
+      const grandTotal = subtotal + Number(enquiry.deliveryCharge);
       return tx.enquiry.update({
         where: { id },
         data: { grandTotal: new Prisma.Decimal(grandTotal) },

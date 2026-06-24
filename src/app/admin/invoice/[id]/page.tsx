@@ -40,6 +40,7 @@ export default async function InvoicePage({ params }: Params) {
       lineTotal: it.lineTotal,
     })),
     grandTotal: enquiry.grandTotal,
+    deliveryCharge: enquiry.deliveryCharge,
   });
   const shareUrl = `https://wa.me/${toWaNumber(enquiry.mobile)}?text=${encodeURIComponent(invoiceText)}`;
 
@@ -128,6 +129,26 @@ export default async function InvoicePage({ params }: Params) {
               ))}
             </tbody>
             <tfoot>
+              {enquiry.deliveryCharge > 0 && (
+                <>
+                  <tr>
+                    <td colSpan={4} className="px-1 pt-3 text-right text-sm">
+                      Subtotal
+                    </td>
+                    <td className="px-1 pt-3 pr-2 text-right text-sm">
+                      {formatCurrency(enquiry.grandTotal - enquiry.deliveryCharge)}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colSpan={4} className="px-1 py-1 text-right text-sm">
+                      Delivery
+                    </td>
+                    <td className="px-1 py-1 pr-2 text-right text-sm">
+                      {formatCurrency(enquiry.deliveryCharge)}
+                    </td>
+                  </tr>
+                </>
+              )}
               <tr>
                 <td colSpan={4} className="px-1 py-3 text-right text-base font-bold">
                   Grand Total

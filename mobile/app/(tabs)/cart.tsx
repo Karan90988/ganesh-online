@@ -4,8 +4,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { formatCurrency } from "../../lib/api";
-import { GREEN, MIN_ORDER_VALUE, modeTheme } from "../../lib/constants";
+import { GREEN, modeTheme } from "../../lib/constants";
 import { useCart, linesForMode, modeTotal } from "../../store/cart";
+import { useStoreSettings } from "../../lib/settings";
 import { useT } from "../../lib/i18n";
 import { QtyInput } from "../../components/qty-input";
 
@@ -18,11 +19,18 @@ export default function CartTab() {
   const removeLine = useCart((s) => s.removeLine);
   const insets = useSafeAreaInsets();
 
+  const settings = useStoreSettings();
   const lines = linesForMode(items, mode);
   const total = modeTotal(items, mode);
-  const minValue = MIN_ORDER_VALUE[mode];
-  const belowMin = total < minValue;
   const theme = modeTheme(mode);
+
+  const isRetail = mode === "RETAIL";
+  const deliveryCharge =
+    isRetail && total < settings.retailFreeDeliveryThreshold ? settings.retailDeliveryCharge : 0;
+  const grand = total + deliveryCharge;
+  const minValue = settings.wholesaleMinOrderValue;
+  const belowMin = !isRetail && total < minValue;
+  const freeDeliveryGap = settings.retailFreeDeliveryThreshold - total;
 
   return (
     <View style={styles.container}>
@@ -78,10 +86,31 @@ export default function CartTab() {
           </ScrollView>
 
           <View style={styles.footer}>
+            {isRetail && (
+              <>
+                <View style={styles.lineRow}>
+                  <Text style={styles.lineLabel}>{t("subtotal")}</Text>
+                  <Text style={styles.lineVal}>{formatCurrency(total)}</Text>
+                </View>
+                <View style={styles.lineRow}>
+                  <Text style={styles.lineLabel}>{t("delivery")}</Text>
+                  {deliveryCharge > 0 ? (
+                    <Text style={styles.lineVal}>{formatCurrency(deliveryCharge)}</Text>
+                  ) : (
+                    <Text style={[styles.lineVal, { color: theme.main, fontWeight: "800" }]}>{t("free")}</Text>
+                  )}
+                </View>
+              </>
+            )}
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>{t("grandTotal")}</Text>
-              <Text style={styles.totalValue}>{formatCurrency(total)}</Text>
+              <Text style={styles.totalValue}>{formatCurrency(isRetail ? grand : total)}</Text>
             </View>
+            {isRetail && deliveryCharge > 0 && (
+              <Text style={styles.freeHint}>
+                {t("freeDeliveryHint", { more: formatCurrency(freeDeliveryGap) })}
+              </Text>
+            )}
             {belowMin ? (
               <>
                 <Text style={styles.minNote}>
@@ -118,6 +147,10 @@ const styles = StyleSheet.create({
   remove: { color: "#b91c1c", fontWeight: "600", fontSize: 12 },
   lineTotal: { fontWeight: "800" },
   footer: { borderTopWidth: 1, borderTopColor: "#e5e7eb", padding: 16, gap: 10 },
+  lineRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  lineLabel: { color: "#6b7280", fontSize: 14 },
+  lineVal: { fontSize: 14, fontWeight: "600" },
+  freeHint: { backgroundColor: "#f3f4f6", color: "#374151", padding: 8, borderRadius: 8, textAlign: "center", fontSize: 12, fontWeight: "600" },
   totalRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   totalLabel: { fontSize: 18, fontWeight: "700" },
   totalValue: { fontSize: 18, fontWeight: "900" },

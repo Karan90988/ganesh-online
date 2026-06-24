@@ -62,6 +62,7 @@ export interface EnquiryDTO {
   deliveryArea: DeliveryArea | null;
   deliveryAddress: string | null;
   grandTotal: number;
+  deliveryCharge: number;
   notes: string | null;
   whatsappSent: boolean;
   items: EnquiryItemDTO[];

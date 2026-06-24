@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
@@ -11,10 +12,10 @@ import {
   Users,
   ClipboardList,
   FileSpreadsheet,
-  Star,
   TrendingUp,
   Megaphone,
   Store,
+  Settings,
   LogOut,
   Menu,
   X,
@@ -25,7 +26,6 @@ import { Button } from "@/components/ui/button";
 const NAV = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/products", label: "Products", icon: Package },
-  { href: "/admin/featured", label: "Home Page", icon: Star },
   { href: "/admin/trending", label: "Trending", icon: TrendingUp },
   { href: "/admin/banners", label: "Promotions", icon: Megaphone },
   { href: "/admin/categories", label: "Categories", icon: Tags },
@@ -33,6 +33,7 @@ const NAV = [
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/orders", label: "Orders", icon: ClipboardList },
   { href: "/admin/import", label: "Excel Import", icon: FileSpreadsheet },
+  { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 export function AdminShell({
@@ -55,9 +56,13 @@ export function AdminShell({
   const SidebarContent = (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2 border-b px-4 py-4">
-        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          <Store className="h-5 w-5" />
-        </span>
+        <Image
+          src="/logo.png"
+          alt="Ganesh Trading"
+          width={36}
+          height={36}
+          className="h-9 w-9 rounded-lg object-cover"
+        />
         <div>
           <p className="text-sm font-bold leading-tight">Ganesh Trading</p>
           <p className="text-xs text-muted-foreground">Admin Panel</p>

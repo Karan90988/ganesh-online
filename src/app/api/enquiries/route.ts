@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
         lineTotal: it.lineTotal,
       })),
       grandTotal: enquiry.grandTotal,
+      deliveryCharge: enquiry.deliveryCharge,
     });
 
     const whatsappNumber = process.env.WHATSAPP_NUMBER || "";

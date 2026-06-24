@@ -12,9 +12,10 @@ import {
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { apiPost, formatCurrency } from "../lib/api";
-import { GREEN, MIN_ORDER_VALUE, WHATSAPP_GREEN, modeTheme } from "../lib/constants";
+import { GREEN, WHATSAPP_GREEN, modeTheme } from "../lib/constants";
 import { useCart, linesForMode, modeTotal } from "../store/cart";
 import { useCustomer } from "../store/customer";
+import { useStoreSettings } from "../lib/settings";
 import { useT } from "../lib/i18n";
 
 interface OrderResult {
@@ -34,10 +35,16 @@ export default function CheckoutScreen() {
   const saveProfile = useCustomer((s) => s.saveProfile);
   const clearProfile = useCustomer((s) => s.clearProfile);
 
+  const settings = useStoreSettings();
   const lines = linesForMode(items, mode);
   const total = modeTotal(items, mode);
-  const minValue = MIN_ORDER_VALUE[mode];
-  const belowMin = total < minValue;
+
+  const isRetail = mode === "RETAIL";
+  const deliveryCharge =
+    isRetail && total < settings.retailFreeDeliveryThreshold ? settings.retailDeliveryCharge : 0;
+  const grand = total + deliveryCharge;
+  const minValue = settings.wholesaleMinOrderValue;
+  const belowMin = !isRetail && total < minValue;
   const theme = modeTheme(mode);
 
   const [name, setName] = useState("");
@@ -166,8 +173,31 @@ export default function CheckoutScreen() {
       )}
 
       <View style={styles.totalBox}>
-        <Text style={styles.totalLabel}>{t("grandTotal")}</Text>
-        <Text style={styles.totalValue}>{formatCurrency(total)}</Text>
+        {isRetail ? (
+          <View style={{ gap: 6 }}>
+            <View style={styles.totalLine}>
+              <Text style={styles.totalLineLabel}>{t("subtotal")}</Text>
+              <Text style={styles.totalLineVal}>{formatCurrency(total)}</Text>
+            </View>
+            <View style={styles.totalLine}>
+              <Text style={styles.totalLineLabel}>{t("delivery")}</Text>
+              {deliveryCharge > 0 ? (
+                <Text style={styles.totalLineVal}>{formatCurrency(deliveryCharge)}</Text>
+              ) : (
+                <Text style={[styles.totalLineVal, { color: theme.main }]}>{t("free")}</Text>
+              )}
+            </View>
+            <View style={[styles.totalLine, styles.totalLineGrand]}>
+              <Text style={styles.totalLabel}>{t("grandTotal")}</Text>
+              <Text style={styles.totalValue}>{formatCurrency(grand)}</Text>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.totalLine}>
+            <Text style={styles.totalLabel}>{t("grandTotal")}</Text>
+            <Text style={styles.totalValue}>{formatCurrency(total)}</Text>
+          </View>
+        )}
       </View>
 
       {errorMsg && <Text style={styles.error}>{errorMsg}</Text>}
@@ -202,7 +232,11 @@ const styles = StyleSheet.create({
   welcomeClear: { color: GREEN, fontWeight: "700" },
   label: { fontWeight: "700", fontSize: 14 },
   input: { borderWidth: 1, borderColor: "#d1d5db", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12, fontSize: 16 },
-  totalBox: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 12, padding: 14 },
+  totalBox: { borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 12, padding: 14 },
+  totalLine: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  totalLineLabel: { color: "#6b7280", fontSize: 14 },
+  totalLineVal: { fontSize: 14, fontWeight: "600" },
+  totalLineGrand: { borderTopWidth: 1, borderTopColor: "#e5e7eb", paddingTop: 6, marginTop: 2 },
   totalLabel: { fontSize: 18, fontWeight: "700" },
   totalValue: { fontSize: 18, fontWeight: "900" },
   error: { backgroundColor: "#fef2f2", color: "#b91c1c", padding: 10, borderRadius: 8, fontWeight: "600" },

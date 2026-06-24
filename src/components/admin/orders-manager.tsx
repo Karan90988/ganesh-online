@@ -51,6 +51,7 @@ function invoiceShareUrl(e: EnquiryDTO): string {
       lineTotal: it.lineTotal,
     })),
     grandTotal: e.grandTotal,
+    deliveryCharge: e.deliveryCharge,
   });
   return `https://wa.me/${toWaNumber(e.mobile)}?text=${encodeURIComponent(text)}`;
 }
@@ -399,7 +400,13 @@ export function OrdersManager() {
                           </li>
                         ))}
                       </ul>
-                      <div className="mt-2 flex justify-between border-t pt-2 font-bold">
+                      {selected.deliveryCharge > 0 && (
+                        <div className="mt-2 flex justify-between border-t pt-2 text-muted-foreground">
+                          <span>Delivery</span>
+                          <span>{formatCurrency(selected.deliveryCharge)}</span>
+                        </div>
+                      )}
+                      <div className={`mt-2 flex justify-between font-bold ${selected.deliveryCharge > 0 ? "" : "border-t pt-2"}`}>
                         <span>Grand Total</span>
                         <span>{formatCurrency(selected.grandTotal)}</span>
                       </div>

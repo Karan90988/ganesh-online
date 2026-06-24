@@ -156,6 +156,7 @@ model Enquiry {
   deliveryArea  DeliveryArea? // retail (legacy / optional zone)
   deliveryAddress String?     // retail full delivery address
   grandTotal    Decimal       @db.Decimal(12, 2)
+  deliveryCharge Decimal      @default(0) @db.Decimal(10, 2) // retail delivery fee (0 if free / wholesale)
   notes         String?       // admin notes
   whatsappSent  Boolean       @default(false)
   // Relations
@@ -232,4 +233,17 @@ model Banner {
 
   @@index([isActive, sortOrder])
   @@map("banners")
+}
+
+// Single-row store settings (delivery charges + minimum order values).
+// Always read/written as the row with id = 1.
+model Settings {
+  id                          Int      @id @default(1)
+  retailFreeDeliveryThreshold Int      @default(500)  // retail cart ≥ this ⇒ free delivery
+  retailDeliveryCharge        Int      @default(40)   // charge added when retail cart is below the threshold
+  wholesaleMinOrderValue      Int      @default(1499) // minimum wholesale cart value to place an order
+  updatedAt                   DateTime @updatedAt
+  createdAt                   DateTime @default(now())
+
+  @@map("settings")
 }

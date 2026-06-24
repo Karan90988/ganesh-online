@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Loader2, Search, Download, Eye } from "lucide-react";
+import { Loader2, Search, Download, Eye, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +39,15 @@ export function CustomersManager() {
   const [page, setPage] = useState(1);
   const [detail, setDetail] = useState<CustomerDTO | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [openOrders, setOpenOrders] = useState<Set<string>>(new Set());
+
+  const toggleOrder = (id: string) =>
+    setOpenOrders((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -61,6 +70,7 @@ export function CustomersManager() {
 
   async function viewHistory(id: string) {
     setLoadingDetail(true);
+    setOpenOrders(new Set());
     setDetail({} as CustomerDTO);
     const res = await fetch(`/api/admin/customers/${id}`);
     const json = await res.json();
@@ -193,17 +203,58 @@ export function CustomersManager() {
               <div>
                 <p className="mb-1 font-semibold">Order history ({detail.enquiries?.length ?? 0})</p>
                 <div className="space-y-2">
-                  {detail.enquiries?.map((e) => (
-                    <div key={e.id} className="rounded-lg border p-3">
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold">{e.enquiryCode}</span>
-                        <Badge variant="outline">{ENQUIRY_STATUS_LABELS[e.status]}</Badge>
+                  {detail.enquiries?.map((e) => {
+                    const open = openOrders.has(e.id);
+                    return (
+                      <div key={e.id} className="overflow-hidden rounded-lg border">
+                        <button
+                          onClick={() => toggleOrder(e.id)}
+                          className="flex w-full items-start justify-between gap-2 p-3 text-left hover:bg-muted/50"
+                        >
+                          <div className="min-w-0">
+                            <span className="flex items-center gap-1.5 font-semibold">
+                              {open ? (
+                                <ChevronDown className="h-4 w-4 shrink-0" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4 shrink-0" />
+                              )}
+                              {e.enquiryCode}
+                            </span>
+                            <p className="mt-0.5 pl-5 text-xs text-muted-foreground">
+                              {formatDate(e.createdAt)} · {e.items.length} items · {formatCurrency(e.grandTotal)}
+                            </p>
+                          </div>
+                          <Badge variant="outline">{ENQUIRY_STATUS_LABELS[e.status]}</Badge>
+                        </button>
+                        {open && (
+                          <div className="border-t bg-muted/30 px-3 py-2">
+                            <ul className="space-y-1 text-xs">
+                              {e.items.map((it, i) => (
+                                <li key={it.id} className="flex justify-between gap-2">
+                                  <span className="min-w-0">
+                                    {i + 1}. {it.productName} × {it.quantity} {it.unit.toLowerCase()}
+                                  </span>
+                                  <span className="whitespace-nowrap font-medium">
+                                    {formatCurrency(it.lineTotal)}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                            {e.deliveryCharge > 0 && (
+                              <div className="mt-1.5 flex justify-between text-xs text-muted-foreground">
+                                <span>Delivery</span>
+                                <span>{formatCurrency(e.deliveryCharge)}</span>
+                              </div>
+                            )}
+                            <div className="mt-1.5 flex justify-between border-t pt-1.5 text-xs font-bold">
+                              <span>Grand Total</span>
+                              <span>{formatCurrency(e.grandTotal)}</span>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDate(e.createdAt)} · {e.items.length} items · {formatCurrency(e.grandTotal)}
-                      </p>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {detail.enquiries?.length === 0 && (
                     <p className="text-muted-foreground">No orders yet.</p>
                   )}

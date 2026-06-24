@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Store, ShoppingBag, Box, Search, TrendingUp, Zap, CalendarClock, Clock } from "lucide-react";
+import { ShoppingBag, Box, Search, TrendingUp, Zap, CalendarClock, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LanguageSwitcher } from "@/components/shop/language-switcher";
 import { PromoBanner } from "@/components/shop/promo-banner";
@@ -66,9 +66,13 @@ export function HomeLanding({
       <header className="bg-primary text-primary-foreground transition-colors">
         <div className="container flex h-16 items-center justify-between gap-2">
           <Link href="/" className="flex min-w-0 items-center gap-2">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/20">
-              <Store className="h-5 w-5" />
-            </span>
+            <Image
+              src="/logo.png"
+              alt="Ganesh Trading Company"
+              width={36}
+              height={36}
+              className="h-9 w-9 shrink-0 rounded-lg object-cover"
+            />
             <span className="truncate text-sm font-extrabold sm:text-xl">Ganesh Trading Company</span>
           </Link>
           <LanguageSwitcher />
