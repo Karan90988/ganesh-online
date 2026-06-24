@@ -1,0 +1,26 @@
+# Mobile app — not part of the backend/storefront image
+mobile
+
+# Dependencies & build artifacts (re-created inside the image)
+node_modules
+.next
+out
+dist
+
+# Secrets & local env (pass these at runtime via --env-file)
+.env
+.env.*
+!.env.example
+
+# VCS / IDE / OS
+.git
+.gitignore
+.vscode
+.idea
+*.log
+.DS_Store
+
+# Misc
+README.md
+DEPLOY-EC2.md
+.devserver.log

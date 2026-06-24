@@ -113,6 +113,12 @@ export default function HomeLanding() {
       </View>
 
       <ScrollView style={{ backgroundColor: theme.light }} contentContainerStyle={{ paddingBottom: 28 }}>
+        {/* Delivery hours for the selected section */}
+        <View style={styles.hoursRow}>
+          <Ionicons name="time-outline" size={14} color={theme.main} />
+          <Text style={[styles.hoursText, { color: theme.main }]}>{t("deliveryHours")}</Text>
+        </View>
+
         {/* Rotating promo banner */}
         <PromoBanner />
 
@@ -248,6 +254,9 @@ const styles = StyleSheet.create({
   tabInactive: { flex: 1, paddingVertical: 10, backgroundColor: "rgba(255,255,255,0.18)" },
   tabActiveText: { fontSize: 17, fontWeight: "900" },
   tabInactiveText: { fontSize: 14, fontWeight: "700", color: "rgba(255,255,255,0.95)" },
+
+  hoursRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, marginTop: 12 },
+  hoursText: { fontSize: 13, fontWeight: "800" },
 
   searchWrap: { flexDirection: "row", alignItems: "center", gap: 8, marginHorizontal: 12, marginTop: 12, backgroundColor: "#fff", borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 10, paddingHorizontal: 12, height: 46 },
   searchInput: { flex: 1, fontSize: 15, paddingVertical: 0 },

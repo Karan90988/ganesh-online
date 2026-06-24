@@ -46,6 +46,7 @@ const en: Dict = {
   "home.shopByCategory": "Shop by category",
   "home.popularProducts": "Popular products",
   "home.trending": "Trending products",
+  "home.deliveryHours": "Delivery: 9 AM – 9 PM",
   "home.searchPlaceholder": "Search products…",
 
   "cart.title": "Your Cart",
@@ -128,6 +129,7 @@ const hi: Dict = {
   "home.shopByCategory": "श्रेणी अनुसार खरीदें",
   "home.popularProducts": "लोकप्रिय उत्पाद",
   "home.trending": "ट्रेंडिंग उत्पाद",
+  "home.deliveryHours": "डिलीवरी: सुबह 9 से रात 9 बजे",
   "home.searchPlaceholder": "उत्पाद खोजें…",
 
   "cart.title": "आपकी कार्ट",
@@ -210,6 +212,7 @@ const mr: Dict = {
   "home.shopByCategory": "वर्गानुसार खरेदी",
   "home.popularProducts": "लोकप्रिय उत्पादने",
   "home.trending": "ट्रेंडिंग उत्पादने",
+  "home.deliveryHours": "डिलिव्हरी: सकाळी 9 ते रात्री 9",
   "home.searchPlaceholder": "उत्पादने शोधा…",
 
   "cart.title": "तुमची कार्ट",

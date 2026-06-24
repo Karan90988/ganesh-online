@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Store, ShoppingBag, Box, Search, TrendingUp, Zap, CalendarClock } from "lucide-react";
+import { Store, ShoppingBag, Box, Search, TrendingUp, Zap, CalendarClock, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LanguageSwitcher } from "@/components/shop/language-switcher";
 import { PromoBanner } from "@/components/shop/promo-banner";
@@ -98,6 +98,12 @@ export function HomeLanding({
           })}
         </div>
       </header>
+
+      {/* Delivery hours for the selected section */}
+      <p className="container mt-3 flex items-center justify-center gap-1.5 text-sm font-bold text-primary">
+        <Clock className="h-4 w-4" />
+        {t("home.deliveryHours")}
+      </p>
 
       {/* Promo banner */}
       <div className="container">

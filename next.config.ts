@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Self-contained server bundle for Docker/EC2 (.next/standalone/server.js).
+  // Ignored by Vercel, so it's safe to keep enabled everywhere.
+  output: "standalone",
   // Pin the workspace root to this project (the mobile/ app has its own lockfile).
   outputFileTracingRoot: process.cwd(),
   images: {
