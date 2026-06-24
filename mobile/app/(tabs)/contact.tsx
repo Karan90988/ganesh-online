@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { apiGet } from "../../lib/api";
 import { GREEN, WHATSAPP_GREEN, modeTheme } from "../../lib/constants";
@@ -19,6 +20,7 @@ interface Business {
 
 export default function ContactScreen() {
   const t = useT();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const mode = useCart((s) => s.mode);
   const theme = modeTheme(mode);
@@ -87,6 +89,11 @@ export default function ContactScreen() {
               </Pressable>
             )}
           </View>
+
+          <Pressable onPress={() => router.push("/owner-alerts" as never)} style={styles.ownerLink}>
+            <Ionicons name="notifications-outline" size={14} color="#9ca3af" />
+            <Text style={styles.ownerLinkText}>Shop owner? Enable order alerts</Text>
+          </Pressable>
         </View>
       )}
     </View>
@@ -123,4 +130,6 @@ const styles = StyleSheet.create({
   btnText: { color: "#fff", fontWeight: "800", fontSize: 16 },
   btnOutline: { borderWidth: 1, borderColor: "#d1d5db", backgroundColor: "#fff" },
   btnOutlineText: { color: "#111827", fontWeight: "800", fontSize: 16 },
+  ownerLink: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, marginTop: 16, paddingVertical: 6 },
+  ownerLinkText: { color: "#9ca3af", fontSize: 12, fontWeight: "600" },
 });

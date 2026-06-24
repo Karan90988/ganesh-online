@@ -16,6 +16,7 @@ import { GREEN, WHATSAPP_GREEN, modeTheme } from "../lib/constants";
 import { useCart, linesForMode, modeTotal } from "../store/cart";
 import { useCustomer } from "../store/customer";
 import { useStoreSettings } from "../lib/settings";
+import { getCachedPushToken } from "../lib/push";
 import { useT } from "../lib/i18n";
 
 interface OrderResult {
@@ -91,6 +92,7 @@ export default function CheckoutScreen() {
         shopName: mode === "WHOLESALE" ? shopName.trim() : undefined,
         deliveryAddress: mode === "RETAIL" ? address.trim() : undefined,
         items: lines.map((l) => ({ productId: l.productId, quantity: l.quantity, variant: l.variant })),
+        pushToken: getCachedPushToken() || undefined,
       });
       saveProfile({ name: name.trim(), mobile, shopName: shopName.trim(), address: address.trim() });
       setResult(data);
