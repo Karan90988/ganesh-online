@@ -17,6 +17,7 @@ export interface CreatedEnquiry {
   deliveryAddress: string | null;
   grandTotal: number;
   deliveryCharge: number;
+  pushToken: string | null;
   items: {
     productName: string;
     unit: string;
@@ -143,6 +144,7 @@ export async function createEnquiry(input: CheckoutInput): Promise<CreatedEnquir
         deliveryAddress: input.type === "RETAIL" ? input.deliveryAddress || null : null,
         grandTotal: new Prisma.Decimal(grandTotal),
         deliveryCharge: new Prisma.Decimal(deliveryCharge),
+        pushToken: input.pushToken || null,
         customerId: customer.id,
         items: { create: lineItems },
       },
@@ -168,6 +170,7 @@ export async function createEnquiry(input: CheckoutInput): Promise<CreatedEnquir
     deliveryAddress: enquiry.deliveryAddress,
     grandTotal: Number(enquiry.grandTotal),
     deliveryCharge: Number(enquiry.deliveryCharge),
+    pushToken: enquiry.pushToken,
     items: enquiry.items.map((it) => ({
       productName: it.productName,
       unit: it.unit,

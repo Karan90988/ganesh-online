@@ -1,7 +1,10 @@
 import { NextRequest } from "next/server";
+import { prisma } from "@/lib/prisma";
 import { checkoutSchema } from "@/lib/validations";
 import { createEnquiry } from "@/services/enquiry.service";
 import { buildWhatsAppMessage } from "@/lib/whatsapp";
+import { sendExpoPush } from "@/lib/push";
+import { formatCurrency } from "@/lib/utils";
 import { ok, handleError } from "@/lib/api";
 
 /**
@@ -21,6 +24,29 @@ export async function POST(req: NextRequest) {
     const input = checkoutSchema.parse(body);
 
     const enquiry = await createEnquiry(input);
+
+    // Push notifications (best-effort): confirm to the customer's device + alert
+    // every shop-owner device that opted into new-order alerts.
+    const ownerDevices = await prisma.ownerDevice.findMany({ select: { token: true } });
+    await Promise.all([
+      enquiry.pushToken
+        ? sendExpoPush([enquiry.pushToken], {
+            title: "Order placed ✅",
+            body: `Order ${enquiry.enquiryCode} received. We'll confirm on WhatsApp.`,
+            data: { enquiryCode: enquiry.enquiryCode },
+          })
+        : Promise.resolve(),
+      ownerDevices.length
+        ? sendExpoPush(
+            ownerDevices.map((d) => d.token),
+            {
+              title: "🛒 New order received",
+              body: `${enquiry.enquiryCode} · ${enquiry.type === "WHOLESALE" ? "Wholesale" : "Retail"} · ${formatCurrency(enquiry.grandTotal)} · ${enquiry.customerName}`,
+              data: { enquiryCode: enquiry.enquiryCode },
+            }
+          )
+        : Promise.resolve(),
+    ]);
 
     const message = buildWhatsAppMessage({
       enquiryCode: enquiry.enquiryCode,

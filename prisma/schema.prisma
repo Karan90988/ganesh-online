@@ -157,6 +157,7 @@ model Enquiry {
   deliveryAddress String?     // retail full delivery address
   grandTotal    Decimal       @db.Decimal(12, 2)
   deliveryCharge Decimal      @default(0) @db.Decimal(10, 2) // retail delivery fee (0 if free / wholesale)
+  pushToken     String?       // Expo push token of the device that placed the order (for status notifications)
   notes         String?       // admin notes
   whatsappSent  Boolean       @default(false)
   // Relations
@@ -233,6 +234,16 @@ model Banner {
 
   @@index([isActive, sortOrder])
   @@map("banners")
+}
+
+// Expo push tokens of shop-owner devices that opted into new-order alerts.
+model OwnerDevice {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  label     String?
+  createdAt DateTime @default(now())
+
+  @@map("owner_devices")
 }
 
 // Single-row store settings (delivery charges + minimum order values).

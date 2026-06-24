@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "665323567939",
+    "project_id": "ganeshnow-f3bb8",
+    "storage_bucket": "ganeshnow-f3bb8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:665323567939:android:ac0555cd3fc9cecfbf8df6",
+        "android_client_info": {
+          "package_name": "com.ganeshtrading.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_4nMBN1bFQJc2DV_5dfddjHrq98SjRFk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

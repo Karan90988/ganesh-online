@@ -31,19 +31,18 @@ export async function registerForPushToken(): Promise<string | null> {
     const req = await Notifications.requestPermissionsAsync();
     granted = req.granted;
   }
+  // Permission denied → return null (caller shows the "allow notifications" hint).
   if (!granted) return null;
 
   const projectId =
     Constants.expoConfig?.extra?.eas?.projectId ??
     (Constants as { easConfig?: { projectId?: string } }).easConfig?.projectId;
 
-  try {
-    const token = await Notifications.getExpoPushTokenAsync(
-      projectId ? { projectId } : undefined
-    );
-    cachedToken = token.data;
-    return token.data;
-  } catch {
-    return null;
-  }
+  // Let token errors propagate so the caller can show the real reason
+  // (e.g. Firebase/FCM not configured for Android push).
+  const token = await Notifications.getExpoPushTokenAsync(
+    projectId ? { projectId } : undefined
+  );
+  cachedToken = token.data;
+  return token.data;
 }

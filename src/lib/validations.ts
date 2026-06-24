@@ -105,6 +105,7 @@ export const checkoutSchema = z
     deliveryArea: z.nativeEnum(DeliveryArea).optional(),
     deliveryAddress: z.string().max(500).optional().or(z.literal("")),
     items: z.array(enquiryItemSchema).min(1, "Cart is empty"),
+    pushToken: z.string().max(200).optional(),
   })
   .refine(
     (data) => data.type !== "RETAIL" || (data.deliveryAddress ?? "").trim().length >= 10,
