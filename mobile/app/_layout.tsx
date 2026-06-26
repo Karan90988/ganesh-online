@@ -1,11 +1,10 @@
 import { useEffect } from 'react';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
 import 'react-native-reanimated';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { registerForPushToken } from '../lib/push';
 
 export const unstable_settings = {
@@ -23,15 +22,15 @@ Notifications.setNotificationHandler({
 });
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
   // Register this device for push notifications on launch.
   useEffect(() => {
     registerForPushToken().catch(() => {});
   }, []);
 
+  // The app is designed light; force the light theme so screens stay readable
+  // even when the phone is in dark mode.
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />

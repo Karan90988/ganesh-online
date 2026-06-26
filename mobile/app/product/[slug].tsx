@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { apiGet, apiPost, formatCurrency } from "../../lib/api";
@@ -15,6 +16,7 @@ export default function ProductDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const router = useRouter();
   const t = useT();
+  const insets = useSafeAreaInsets();
   const mode = useCart((s) => s.mode);
   const items = useCart((s) => s.items);
   const addLine = useCart((s) => s.addLine);
@@ -183,7 +185,10 @@ export default function ProductDetailScreen() {
       </ScrollView>
 
       {cartCount > 0 && (
-        <Pressable style={[styles.viewCart, { backgroundColor: theme.main }]} onPress={() => router.push("/cart")}>
+        <Pressable
+          style={[styles.viewCart, { backgroundColor: theme.main, paddingBottom: insets.bottom + 16 }]}
+          onPress={() => router.push("/cart")}
+        >
           <Text style={styles.viewCartText}>
             {t("goToCart")} ({cartCount}) · {formatCurrency(cartTotal)}
           </Text>

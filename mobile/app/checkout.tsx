@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  AppState,
   Linking,
   Pressable,
   ScrollView,
@@ -55,6 +56,21 @@ export default function CheckoutScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [result, setResult] = useState<OrderResult | null>(null);
+  const [waSent, setWaSent] = useState(false);
+
+  // After the order is placed, the user is sent to WhatsApp. When they come back
+  // to the app, hide the "Send on WhatsApp" button so the same order can't be
+  // re-sent over and over.
+  const appState = useRef(AppState.currentState);
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (next) => {
+      if (result && /inactive|background/.test(appState.current) && next === "active") {
+        setWaSent(true);
+      }
+      appState.current = next;
+    });
+    return () => sub.remove();
+  }, [result]);
 
   // Prefill once from the saved on-device profile.
   const prefilled = useRef(false);
@@ -115,14 +131,21 @@ export default function CheckoutScreen() {
         <Text style={styles.successMsg}>
           {t("orderIdIs")} <Text style={{ fontWeight: "800" }}>{result.enquiryCode}</Text>.
         </Text>
+        {!waSent && (
+          <Pressable
+            style={[styles.primaryBtn, { backgroundColor: WHATSAPP_GREEN }]}
+            onPress={() => Linking.openURL(result.whatsappUrl)}
+          >
+            <Text style={styles.primaryBtnText}>{t("sendWhatsApp")}</Text>
+          </Pressable>
+        )}
         <Pressable
-          style={[styles.primaryBtn, { backgroundColor: WHATSAPP_GREEN }]}
-          onPress={() => Linking.openURL(result.whatsappUrl)}
+          style={waSent ? [styles.primaryBtn, { backgroundColor: theme.main }] : undefined}
+          onPress={() => router.replace("/")}
         >
-          <Text style={styles.primaryBtnText}>{t("sendWhatsApp")}</Text>
-        </Pressable>
-        <Pressable onPress={() => router.replace("/")}>
-          <Text style={[styles.link, { color: theme.main }]}>{t("continueShopping")}</Text>
+          <Text style={waSent ? styles.primaryBtnText : [styles.link, { color: theme.main }]}>
+            {t("continueShopping")}
+          </Text>
         </Pressable>
       </View>
     );
@@ -227,7 +250,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 14, padding: 24 },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 14, padding: 24, backgroundColor: "#fff" },
   subtitle: { color: "#6b7280", fontSize: 13 },
   welcome: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: "#ecfdf5", borderWidth: 1, borderColor: "#a7f3d0", borderRadius: 10, padding: 12 },
   welcomeText: { fontWeight: "600", color: "#374151", flex: 1 },
