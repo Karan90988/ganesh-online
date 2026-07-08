@@ -16,14 +16,7 @@ export async function GET() {
   try {
     await requireAdmin();
 
-    const rows = await prisma.enquiry.findMany({
-      where: { pushToken: { not: null } },
-      select: { pushToken: true },
-      distinct: ["pushToken"],
-    });
-    const deviceCount = rows.filter(
-      (r) => typeof r.pushToken === "string" && r.pushToken.startsWith("ExponentPushToken")
-    ).length;
+    const deviceCount = await prisma.appDevice.count();
 
     const logs = await prisma.broadcastLog.findMany({
       orderBy: { createdAt: "desc" },
@@ -42,14 +35,8 @@ export async function POST(req: NextRequest) {
     await requireAdmin();
     const { channel, title, body } = broadcastSchema.parse(await req.json());
 
-    const rows = await prisma.enquiry.findMany({
-      where: { pushToken: { not: null } },
-      select: { pushToken: true },
-      distinct: ["pushToken"],
-    });
-    const tokens = rows
-      .map((r) => r.pushToken)
-      .filter((t): t is string => typeof t === "string" && t.startsWith("ExponentPushToken"));
+    const rows = await prisma.appDevice.findMany({ select: { token: true } });
+    const tokens = rows.map((r) => r.token);
 
     if (tokens.length === 0) return fail("No registered devices found", 400);
 

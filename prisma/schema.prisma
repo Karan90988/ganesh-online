@@ -246,6 +246,16 @@ model OwnerDevice {
   @@map("owner_devices")
 }
 
+// Every device that opens the app registers here — used for broadcast notifications.
+model AppDevice {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("app_devices")
+}
+
 // Log of admin-initiated broadcast push notifications.
 model BroadcastLog {
   id        String   @id @default(cuid())

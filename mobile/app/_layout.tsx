@@ -6,6 +6,7 @@ import * as Notifications from 'expo-notifications';
 import 'react-native-reanimated';
 
 import { registerForPushToken } from '../lib/push';
+import { API_BASE_URL } from '../lib/config';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -22,9 +23,20 @@ Notifications.setNotificationHandler({
 });
 
 export default function RootLayout() {
-  // Register this device for push notifications on launch.
+  // Register this device for push notifications on launch,
+  // then tell the backend so it can reach this device for broadcasts.
   useEffect(() => {
-    registerForPushToken().catch(() => {});
+    registerForPushToken()
+      .then((token) => {
+        if (token) {
+          fetch(`${API_BASE_URL}/api/devices/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token }),
+          }).catch(() => {});
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // The app is designed light; force the light theme so screens stay readable
