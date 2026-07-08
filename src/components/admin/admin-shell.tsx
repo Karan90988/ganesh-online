@@ -14,6 +14,7 @@ import {
   FileSpreadsheet,
   TrendingUp,
   Megaphone,
+  Bell,
   Store,
   Settings,
   LogOut,
@@ -33,6 +34,7 @@ const NAV = [
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/orders", label: "Orders", icon: ClipboardList },
   { href: "/admin/import", label: "Excel Import", icon: FileSpreadsheet },
+  { href: "/admin/notifications", label: "Notifications", icon: Bell },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 

@@ -246,6 +246,19 @@ model OwnerDevice {
   @@map("owner_devices")
 }
 
+// Log of admin-initiated broadcast push notifications.
+model BroadcastLog {
+  id        String   @id @default(cuid())
+  channel   String   // "RETAIL" | "WHOLESALE"
+  title     String
+  body      String
+  sentCount Int
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("broadcast_logs")
+}
+
 // Single-row store settings (delivery charges + minimum order values).
 // Always read/written as the row with id = 1.
 model Settings {
