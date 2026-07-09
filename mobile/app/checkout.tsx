@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import * as Location from "expo-location";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { apiPost, formatCurrency } from "../lib/api";
@@ -54,6 +55,7 @@ export default function CheckoutScreen() {
   const [shopName, setShopName] = useState("");
   const [address, setAddress] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [locating, setLocating] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [result, setResult] = useState<OrderResult | null>(null);
   const [waSent, setWaSent] = useState(false);
@@ -90,6 +92,38 @@ export default function CheckoutScreen() {
     setMobile("");
     setShopName("");
     setAddress("");
+  }
+
+  async function useCurrentLocation() {
+    setLocating(true);
+    setErrorMsg(null);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        setErrorMsg("Location permission denied. Please enter your address manually.");
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const [place] = await Location.reverseGeocodeAsync({
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+      });
+      if (place) {
+        const parts = [
+          place.name,
+          place.street,
+          place.district,
+          place.subregion,
+          place.city,
+          place.postalCode,
+        ].filter(Boolean);
+        setAddress(parts.join(", "));
+      }
+    } catch {
+      setErrorMsg("Couldn't fetch location. Please enter your address manually.");
+    } finally {
+      setLocating(false);
+    }
   }
 
   async function submit() {
@@ -194,6 +228,20 @@ export default function CheckoutScreen() {
             multiline
             placeholder={t("addressPlaceholder")}
           />
+          <Pressable
+            onPress={useCurrentLocation}
+            disabled={locating}
+            style={styles.locationBtn}
+          >
+            {locating ? (
+              <ActivityIndicator size={13} color={theme.main} />
+            ) : (
+              <Text style={styles.locationBtnIcon}>📍</Text>
+            )}
+            <Text style={[styles.locationBtnText, { color: theme.main }]}>
+              {locating ? "Detecting location…" : "Use my current location"}
+            </Text>
+          </Pressable>
         </Field>
       )}
 
@@ -269,6 +317,9 @@ const styles = StyleSheet.create({
   primaryBtnText: { color: "#fff", fontWeight: "800", fontSize: 16 },
   btnDisabled: { opacity: 0.6 },
   note: { color: "#9ca3af", fontSize: 12, textAlign: "center" },
+  locationBtn: { flexDirection: "row", alignItems: "center", gap: 5, alignSelf: "flex-start", paddingVertical: 4 },
+  locationBtnIcon: { fontSize: 13 },
+  locationBtnText: { fontSize: 13, fontWeight: "600" },
   successTitle: { fontSize: 24, fontWeight: "900" },
   successMsg: { color: "#374151", textAlign: "center" },
   link: { color: GREEN, fontWeight: "700" },
