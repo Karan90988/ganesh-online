@@ -117,7 +117,12 @@ export default function CheckoutScreen() {
           place.city,
           place.postalCode,
         ].filter(Boolean);
-        setAddress(parts.join(", "));
+        const formatted = parts.join(", ");
+        if (mode === "WHOLESALE") {
+          setShopName((prev) => prev.trim() ? `${prev.trim()}\n${formatted}` : formatted);
+        } else {
+          setAddress(formatted);
+        }
       }
     } catch {
       setErrorMsg("Couldn't fetch location. Please enter your address manually.");
@@ -130,6 +135,7 @@ export default function CheckoutScreen() {
     setErrorMsg(null);
     if (name.trim().length < 2) return setErrorMsg(t("errName"));
     if (!/^[6-9]\d{9}$/.test(mobile)) return setErrorMsg(t("errMobile"));
+    if (mode === "WHOLESALE" && shopName.trim().length < 5) return setErrorMsg("Please enter your shop name and address.");
     if (mode === "RETAIL" && address.trim().length < 10) return setErrorMsg(t("errAddress"));
     if (belowMin) return setErrorMsg(t("errMin", { min: formatCurrency(minValue) }));
 
@@ -140,7 +146,7 @@ export default function CheckoutScreen() {
         customerName: name.trim(),
         mobile,
         shopName: mode === "WHOLESALE" ? shopName.trim() : undefined,
-        deliveryAddress: address.trim() || undefined,
+        deliveryAddress: mode === "RETAIL" ? address.trim() : undefined,
         items: lines.map((l) => ({ productId: l.productId, quantity: l.quantity, variant: l.variant })),
         pushToken: getCachedPushToken() || undefined,
       });
@@ -216,21 +222,16 @@ export default function CheckoutScreen() {
         />
       </Field>
       {mode === "WHOLESALE" ? (
-        <>
-          <Field label={t("shopOptional")}>
-            <TextInput style={styles.input} value={shopName} onChangeText={setShopName} placeholder={t("shopPlaceholder")} />
-          </Field>
-          <Field label="Delivery Address (optional)">
-            <TextInput
-              style={[styles.input, { height: 96, textAlignVertical: "top" }]}
-              value={address}
-              onChangeText={setAddress}
-              multiline
-              placeholder="Shop / delivery address"
-            />
-            <LocationButton locating={locating} color={theme.main} onPress={useCurrentLocation} />
-          </Field>
-        </>
+        <Field label="Shop Name / Address *">
+          <TextInput
+            style={[styles.input, { height: 96, textAlignVertical: "top" }]}
+            value={shopName}
+            onChangeText={setShopName}
+            multiline
+            placeholder="e.g. Sharma Kirana Store, Shop No. 5, Market Road, Vasai"
+          />
+          <LocationButton locating={locating} color={theme.main} onPress={useCurrentLocation} />
+        </Field>
       ) : (
         <Field label={`${t("deliveryAddress")} *`}>
           <TextInput
