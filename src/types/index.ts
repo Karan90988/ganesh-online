@@ -61,6 +61,8 @@ export interface EnquiryDTO {
   shopName: string | null;
   deliveryArea: DeliveryArea | null;
   deliveryAddress: string | null;
+  latitude: number | null;
+  longitude: number | null;
   grandTotal: number;
   deliveryCharge: number;
   notes: string | null;

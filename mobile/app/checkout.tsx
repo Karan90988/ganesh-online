@@ -54,6 +54,7 @@ export default function CheckoutScreen() {
   const [mobile, setMobile] = useState("");
   const [shopName, setShopName] = useState("");
   const [address, setAddress] = useState("");
+  const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [locating, setLocating] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -92,6 +93,7 @@ export default function CheckoutScreen() {
     setMobile("");
     setShopName("");
     setAddress("");
+    setLocationCoords(null);
   }
 
   async function useCurrentLocation() {
@@ -118,6 +120,7 @@ export default function CheckoutScreen() {
           place.postalCode,
         ].filter(Boolean);
         const formatted = parts.join(", ");
+        setLocationCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         if (mode === "WHOLESALE") {
           setShopName((prev) => prev.trim() ? `${prev.trim()}\n${formatted}` : formatted);
         } else {
@@ -149,6 +152,8 @@ export default function CheckoutScreen() {
         deliveryAddress: mode === "RETAIL" ? address.trim() : undefined,
         items: lines.map((l) => ({ productId: l.productId, quantity: l.quantity, variant: l.variant })),
         pushToken: getCachedPushToken() || undefined,
+        latitude: locationCoords?.lat,
+        longitude: locationCoords?.lng,
       });
       saveProfile({ name: name.trim(), mobile, shopName: shopName.trim(), address: address.trim() });
       setResult(data);

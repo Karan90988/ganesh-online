@@ -106,6 +106,8 @@ export const checkoutSchema = z
     deliveryAddress: z.string().max(500).optional().or(z.literal("")),
     items: z.array(enquiryItemSchema).min(1, "Cart is empty"),
     pushToken: z.string().max(200).optional(),
+    latitude: z.number().min(-90).max(90).optional(),
+    longitude: z.number().min(-180).max(180).optional(),
   })
   .refine(
     (data) => data.type !== "RETAIL" || (data.deliveryAddress ?? "").trim().length >= 10,

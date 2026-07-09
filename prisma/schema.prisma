@@ -158,6 +158,8 @@ model Enquiry {
   grandTotal    Decimal       @db.Decimal(12, 2)
   deliveryCharge Decimal      @default(0) @db.Decimal(10, 2) // retail delivery fee (0 if free / wholesale)
   pushToken     String?       // Expo push token of the device that placed the order (for status notifications)
+  latitude      Float?        // GPS coordinates captured when customer used "current location"
+  longitude     Float?
   notes         String?       // admin notes
   whatsappSent  Boolean       @default(false)
   // Relations

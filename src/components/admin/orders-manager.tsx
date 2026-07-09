@@ -37,6 +37,37 @@ import {
 import { buildInvoiceMessage, toWaNumber } from "@/lib/whatsapp";
 import { EnquiryDTO, Pagination } from "@/types";
 
+/** WhatsApp message to send order + location details to a delivery boy. */
+function deliveryShareUrl(e: EnquiryDTO): string {
+  const items = e.items
+    .map((it, i) => `${i + 1}. ${it.productName} × ${it.quantity} ${it.unit.toLowerCase()} — ₹${Number(it.lineTotal).toLocaleString("en-IN")}`)
+    .join("\n");
+
+  const address = e.deliveryAddress || e.shopName || "—";
+
+  const mapsLink =
+    e.latitude && e.longitude
+      ? `\n📍 GPS Location: https://www.google.com/maps?q=${e.latitude},${e.longitude}`
+      : `\n🔍 Search: https://maps.google.com/?q=${encodeURIComponent(address)}`;
+
+  const msg = [
+    `📦 *DELIVERY — ${e.enquiryCode}*`,
+    ``,
+    `👤 Customer: ${e.customerName}`,
+    `📞 Mobile: ${e.mobile}`,
+    ``,
+    `🛍 Items:`,
+    items,
+    ``,
+    `💰 Grand Total: ₹${Number(e.grandTotal).toLocaleString("en-IN")}`,
+    ``,
+    `📬 Address: ${address}`,
+    mapsLink,
+  ].join("\n");
+
+  return `https://wa.me/?text=${encodeURIComponent(msg)}`;
+}
+
 /** WhatsApp share link to the customer with the (updated) invoice text. */
 function invoiceShareUrl(e: EnquiryDTO): string {
   const text = buildInvoiceMessage({
@@ -497,6 +528,17 @@ export function OrdersManager() {
                     </Button>
                   </a>
                 </div>
+                {(selected.deliveryAddress || selected.shopName) && (
+                  <a href={deliveryShareUrl(selected)} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" className="w-full gap-2 border-blue-200 text-blue-700 hover:bg-blue-50">
+                      <MessageCircle className="h-4 w-4" />
+                      Share to Delivery Boy
+                      {selected.latitude && selected.longitude && (
+                        <span className="ml-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold">📍 GPS</span>
+                      )}
+                    </Button>
+                  </a>
+                )}
               </div>
             </>
           )}
