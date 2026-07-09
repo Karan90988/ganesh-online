@@ -529,15 +529,18 @@ export function OrdersManager() {
                   </a>
                 </div>
                 {(selected.deliveryAddress || selected.shopName) && (
-                  <a href={deliveryShareUrl(selected)} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline" className="w-full gap-2 border-blue-200 text-blue-700 hover:bg-blue-50">
-                      <MessageCircle className="h-4 w-4" />
-                      Share to Delivery Boy
-                      {selected.latitude && selected.longitude && (
-                        <span className="ml-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold">📍 GPS</span>
-                      )}
-                    </Button>
-                  </a>
+                  <>
+                    <div className="border-t" />
+                    <a href={deliveryShareUrl(selected)} target="_blank" rel="noopener noreferrer">
+                      <Button variant="outline" className="w-full gap-2 border-blue-200 text-blue-700 hover:bg-blue-50">
+                        <MessageCircle className="h-4 w-4" />
+                        Share to Delivery Boy
+                        {selected.latitude && selected.longitude && (
+                          <span className="ml-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold">📍 GPS</span>
+                        )}
+                      </Button>
+                    </a>
+                  </>
                 )}
               </div>
             </>
