@@ -140,7 +140,7 @@ export default function CheckoutScreen() {
         customerName: name.trim(),
         mobile,
         shopName: mode === "WHOLESALE" ? shopName.trim() : undefined,
-        deliveryAddress: mode === "RETAIL" ? address.trim() : undefined,
+        deliveryAddress: address.trim() || undefined,
         items: lines.map((l) => ({ productId: l.productId, quantity: l.quantity, variant: l.variant })),
         pushToken: getCachedPushToken() || undefined,
       });
@@ -216,9 +216,21 @@ export default function CheckoutScreen() {
         />
       </Field>
       {mode === "WHOLESALE" ? (
-        <Field label={t("shopOptional")}>
-          <TextInput style={styles.input} value={shopName} onChangeText={setShopName} placeholder={t("shopPlaceholder")} />
-        </Field>
+        <>
+          <Field label={t("shopOptional")}>
+            <TextInput style={styles.input} value={shopName} onChangeText={setShopName} placeholder={t("shopPlaceholder")} />
+          </Field>
+          <Field label="Delivery Address (optional)">
+            <TextInput
+              style={[styles.input, { height: 96, textAlignVertical: "top" }]}
+              value={address}
+              onChangeText={setAddress}
+              multiline
+              placeholder="Shop / delivery address"
+            />
+            <LocationButton locating={locating} color={theme.main} onPress={useCurrentLocation} />
+          </Field>
+        </>
       ) : (
         <Field label={`${t("deliveryAddress")} *`}>
           <TextInput
@@ -228,20 +240,7 @@ export default function CheckoutScreen() {
             multiline
             placeholder={t("addressPlaceholder")}
           />
-          <Pressable
-            onPress={useCurrentLocation}
-            disabled={locating}
-            style={styles.locationBtn}
-          >
-            {locating ? (
-              <ActivityIndicator size={13} color={theme.main} />
-            ) : (
-              <Text style={styles.locationBtnIcon}>📍</Text>
-            )}
-            <Text style={[styles.locationBtnText, { color: theme.main }]}>
-              {locating ? "Detecting location…" : "Use my current location"}
-            </Text>
-          </Pressable>
+          <LocationButton locating={locating} color={theme.main} onPress={useCurrentLocation} />
         </Field>
       )}
 
@@ -284,6 +283,21 @@ export default function CheckoutScreen() {
       </Pressable>
       <Text style={styles.note}>{t("savedNote")}</Text>
     </ScrollView>
+  );
+}
+
+function LocationButton({ locating, color, onPress }: { locating: boolean; color: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} disabled={locating} style={styles.locationBtn}>
+      {locating ? (
+        <ActivityIndicator size={13} color={color} />
+      ) : (
+        <Text style={styles.locationBtnIcon}>📍</Text>
+      )}
+      <Text style={[styles.locationBtnText, { color }]}>
+        {locating ? "Detecting location…" : "Use my current location"}
+      </Text>
+    </Pressable>
   );
 }
 
