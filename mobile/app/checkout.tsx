@@ -54,6 +54,7 @@ export default function CheckoutScreen() {
   const [mobile, setMobile] = useState("");
   const [shopName, setShopName] = useState("");
   const [address, setAddress] = useState("");
+  const [detectedAddress, setDetectedAddress] = useState<string | null>(null);
   const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [locating, setLocating] = useState(false);
@@ -61,9 +62,6 @@ export default function CheckoutScreen() {
   const [result, setResult] = useState<OrderResult | null>(null);
   const [waSent, setWaSent] = useState(false);
 
-  // After the order is placed, the user is sent to WhatsApp. When they come back
-  // to the app, hide the "Send on WhatsApp" button so the same order can't be
-  // re-sent over and over.
   const appState = useRef(AppState.currentState);
   useEffect(() => {
     const sub = AppState.addEventListener("change", (next) => {
@@ -75,7 +73,6 @@ export default function CheckoutScreen() {
     return () => sub.remove();
   }, [result]);
 
-  // Prefill once from the saved on-device profile.
   const prefilled = useRef(false);
   useEffect(() => {
     if (profile && !prefilled.current) {
@@ -93,6 +90,12 @@ export default function CheckoutScreen() {
     setMobile("");
     setShopName("");
     setAddress("");
+    setDetectedAddress(null);
+    setLocationCoords(null);
+  }
+
+  function clearLocation() {
+    setDetectedAddress(null);
     setLocationCoords(null);
   }
 
@@ -119,13 +122,8 @@ export default function CheckoutScreen() {
           place.city,
           place.postalCode,
         ].filter(Boolean);
-        const formatted = parts.join(", ");
+        setDetectedAddress(parts.join(", "));
         setLocationCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        if (mode === "WHOLESALE") {
-          setShopName((prev) => prev.trim() ? `${prev.trim()}\n${formatted}` : formatted);
-        } else {
-          setAddress(formatted);
-        }
       }
     } catch {
       setErrorMsg("Couldn't fetch location. Please enter your address manually.");
@@ -226,29 +224,61 @@ export default function CheckoutScreen() {
           placeholder={t("mobilePlaceholder")}
         />
       </Field>
-      {mode === "WHOLESALE" ? (
-        <Field label="Shop Name / Address *">
-          <TextInput
-            style={[styles.input, { height: 96, textAlignVertical: "top" }]}
-            value={shopName}
-            onChangeText={setShopName}
-            multiline
-            placeholder="e.g. Sharma Kirana Store, Shop No. 5, Market Road, Vasai"
-          />
-          <LocationButton locating={locating} color={theme.main} onPress={useCurrentLocation} />
-        </Field>
-      ) : (
-        <Field label={`${t("deliveryAddress")} *`}>
-          <TextInput
-            style={[styles.input, { height: 96, textAlignVertical: "top" }]}
-            value={address}
-            onChangeText={setAddress}
-            multiline
-            placeholder={t("addressPlaceholder")}
-          />
-          <LocationButton locating={locating} color={theme.main} onPress={useCurrentLocation} />
-        </Field>
-      )}
+
+      {/* Address block — same structure for both modes */}
+      <View style={{ gap: 10 }}>
+        {/* Step 1: Location button */}
+        <Pressable
+          onPress={useCurrentLocation}
+          disabled={locating}
+          style={[styles.locationBtn, { borderColor: theme.main }]}
+        >
+          {locating ? (
+            <ActivityIndicator size={14} color={theme.main} />
+          ) : (
+            <Text style={styles.locationBtnIcon}>📍</Text>
+          )}
+          <Text style={[styles.locationBtnText, { color: theme.main }]}>
+            {locating ? "Detecting location…" : "Use current location (optional)"}
+          </Text>
+        </Pressable>
+
+        {/* Step 2: Detected location card */}
+        {detectedAddress && (
+          <View style={styles.detectedCard}>
+            <Text style={styles.detectedLabel}>📍 Detected location</Text>
+            <View style={styles.detectedRow}>
+              <Text style={styles.detectedText} numberOfLines={3}>{detectedAddress}</Text>
+              <Pressable onPress={clearLocation} style={styles.clearBtn} hitSlop={8}>
+                <Text style={styles.clearBtnText}>✕</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+
+        {/* Step 3: Required address input */}
+        {mode === "WHOLESALE" ? (
+          <Field label="Shop Name / Address *">
+            <TextInput
+              style={[styles.input, { height: 96, textAlignVertical: "top" }]}
+              value={shopName}
+              onChangeText={setShopName}
+              multiline
+              placeholder="e.g. Sharma Kirana Store, Shop No. 5, Market Road, Vasai"
+            />
+          </Field>
+        ) : (
+          <Field label={`${t("deliveryAddress")} *`}>
+            <TextInput
+              style={[styles.input, { height: 96, textAlignVertical: "top" }]}
+              value={address}
+              onChangeText={setAddress}
+              multiline
+              placeholder={t("addressPlaceholder")}
+            />
+          </Field>
+        )}
+      </View>
 
       <View style={styles.totalBox}>
         {isRetail ? (
@@ -287,23 +317,7 @@ export default function CheckoutScreen() {
       >
         {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryBtnText}>{t("placeOrder")}</Text>}
       </Pressable>
-      <Text style={styles.note}>{t("savedNote")}</Text>
     </ScrollView>
-  );
-}
-
-function LocationButton({ locating, color, onPress }: { locating: boolean; color: string; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} disabled={locating} style={styles.locationBtn}>
-      {locating ? (
-        <ActivityIndicator size={13} color={color} />
-      ) : (
-        <Text style={styles.locationBtnIcon}>📍</Text>
-      )}
-      <Text style={[styles.locationBtnText, { color }]}>
-        {locating ? "Detecting location…" : "Use my current location"}
-      </Text>
-    </Pressable>
   );
 }
 
@@ -320,9 +334,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 14, padding: 24, backgroundColor: "#fff" },
   subtitle: { color: "#6b7280", fontSize: 13 },
-  welcome: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: "#ecfdf5", borderWidth: 1, borderColor: "#a7f3d0", borderRadius: 10, padding: 12 },
+  welcome: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderRadius: 10, padding: 12 },
   welcomeText: { fontWeight: "600", color: "#374151", flex: 1 },
-  welcomeClear: { color: GREEN, fontWeight: "700" },
+  welcomeClear: { fontWeight: "700" },
   label: { fontWeight: "700", fontSize: 14 },
   input: { borderWidth: 1, borderColor: "#d1d5db", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12, fontSize: 16 },
   totalBox: { borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 12, padding: 14 },
@@ -333,14 +347,19 @@ const styles = StyleSheet.create({
   totalLabel: { fontSize: 18, fontWeight: "700" },
   totalValue: { fontSize: 18, fontWeight: "900" },
   error: { backgroundColor: "#fef2f2", color: "#b91c1c", padding: 10, borderRadius: 8, fontWeight: "600" },
-  primaryBtn: { backgroundColor: GREEN, borderRadius: 10, paddingVertical: 15, alignItems: "center" },
+  primaryBtn: { borderRadius: 10, paddingVertical: 15, alignItems: "center" },
   primaryBtnText: { color: "#fff", fontWeight: "800", fontSize: 16 },
   btnDisabled: { opacity: 0.6 },
-  note: { color: "#9ca3af", fontSize: 12, textAlign: "center" },
-  locationBtn: { flexDirection: "row", alignItems: "center", gap: 5, alignSelf: "flex-start", paddingVertical: 4 },
-  locationBtnIcon: { fontSize: 13 },
-  locationBtnText: { fontSize: 13, fontWeight: "600" },
+  locationBtn: { flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1.5, borderRadius: 10, paddingVertical: 11, paddingHorizontal: 14, borderStyle: "dashed" },
+  locationBtnIcon: { fontSize: 15 },
+  locationBtnText: { fontSize: 14, fontWeight: "600" },
+  detectedCard: { backgroundColor: "#f0fdf4", borderWidth: 1, borderColor: "#bbf7d0", borderRadius: 10, padding: 12, gap: 4 },
+  detectedLabel: { fontSize: 11, fontWeight: "700", color: "#16a34a", textTransform: "uppercase", letterSpacing: 0.5 },
+  detectedRow: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
+  detectedText: { flex: 1, fontSize: 13, color: "#374151", lineHeight: 18 },
+  clearBtn: { paddingTop: 1 },
+  clearBtnText: { fontSize: 14, color: "#9ca3af", fontWeight: "700" },
   successTitle: { fontSize: 24, fontWeight: "900" },
   successMsg: { color: "#374151", textAlign: "center" },
-  link: { color: GREEN, fontWeight: "700" },
+  link: { fontWeight: "700" },
 });
