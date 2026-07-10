@@ -47,21 +47,21 @@ function deliveryShareUrl(e: EnquiryDTO): string {
 
   const mapsLink =
     e.latitude && e.longitude
-      ? `\n📍 GPS Location: https://www.google.com/maps?q=${e.latitude},${e.longitude}`
-      : `\n🔍 Search: https://maps.google.com/?q=${encodeURIComponent(address)}`;
+      ? `Location: https://www.google.com/maps?q=${e.latitude},${e.longitude}`
+      : `Location: https://maps.google.com/?q=${encodeURIComponent(address)}`;
 
   const msg = [
-    `📦 *DELIVERY — ${e.enquiryCode}*`,
+    `*DELIVERY — ${e.enquiryCode}*`,
     ``,
-    `👤 Customer: ${e.customerName}`,
-    `📞 Mobile: ${e.mobile}`,
+    `Customer: ${e.customerName}`,
+    `Mobile: ${e.mobile}`,
     ``,
-    `🛍 Items:`,
+    `Items:`,
     items,
     ``,
-    `💰 Grand Total: ₹${Number(e.grandTotal).toLocaleString("en-IN")}`,
+    `Grand Total: ₹${Number(e.grandTotal).toLocaleString("en-IN")}`,
     ``,
-    `📬 Address: ${address}`,
+    `Address: ${address}`,
     mapsLink,
   ].join("\n");
 
@@ -534,7 +534,7 @@ export function OrdersManager() {
                     <a href={deliveryShareUrl(selected)} target="_blank" rel="noopener noreferrer">
                       <Button variant="outline" className="w-full gap-2 border-blue-200 text-blue-700 hover:bg-blue-50">
                         <MessageCircle className="h-4 w-4" />
-                        Share to Delivery Boy
+                        Share Delivery Address
                         {selected.latitude && selected.longitude && (
                           <span className="ml-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold">📍 GPS</span>
                         )}
