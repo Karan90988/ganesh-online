@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   AppState,
+  KeyboardAvoidingView,
   Linking,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -195,7 +197,16 @@ export default function CheckoutScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ padding: 16, gap: 14 }}>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 88 : 56}
+    >
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 80 }}
+      keyboardShouldPersistTaps="handled"
+    >
       <StatusBar style="dark" />
       <Stack.Screen options={{ title: t("checkout") }} />
       <Text style={styles.subtitle}>
@@ -318,6 +329,7 @@ export default function CheckoutScreen() {
         {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryBtnText}>{t("placeOrder")}</Text>}
       </Pressable>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
