@@ -50,7 +50,7 @@ export default function BrowseScreen() {
       if (append) setLoadingMore(true);
       else setLoading(true);
       try {
-        const p = new URLSearchParams({ page: String(page), pageSize: "20" });
+        const p = new URLSearchParams({ page: String(page), pageSize: "20", mode });
         if (search.trim()) p.set("search", search.trim());
         if (category) p.set("category", category);
         const data = await apiGet<{ products: ProductDTO[]; pagination: Pagination }>(

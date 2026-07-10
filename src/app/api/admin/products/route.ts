@@ -81,6 +81,7 @@ export async function POST(req: NextRequest) {
         stockQuantity: data.stockQuantity,
         unit: data.unit,
         status: data.status,
+        channel: data.channel,
         ...bulkFields(data),
       },
     });

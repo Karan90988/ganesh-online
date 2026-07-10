@@ -61,6 +61,12 @@ enum AdminRole {
   STAFF
 }
 
+enum ProductChannel {
+  BOTH
+  RETAIL_ONLY
+  WHOLESALE_ONLY
+}
+
 // ------------------------------------------------------------
 // MODELS
 // ------------------------------------------------------------
@@ -107,8 +113,9 @@ model Product {
   // Inventory
   stockQuantity Int           @default(0)
   unit          Unit          @default(PIECE)      // base selling unit (KG, LITRE, PIECE ...)
-  status        ProductStatus @default(ACTIVE)
-  isFeatured    Boolean       @default(false)      // hand-picked to show in the home "Popular products" section
+  status        ProductStatus  @default(ACTIVE)
+  channel       ProductChannel @default(BOTH)   // which storefront this product appears in
+  isFeatured    Boolean        @default(false)      // hand-picked to show in the home "Popular products" section
   isTrending    Boolean       @default(false)      // hand-picked to show in the home "Trending products" slider
   clickCount    Int           @default(0)          // product-detail views; used to auto-rank trending
   // Relations

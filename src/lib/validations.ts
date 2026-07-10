@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Unit, ProductStatus, EnquiryStatus, DeliveryArea, CustomerType } from "@prisma/client";
+import { Unit, ProductStatus, ProductChannel, EnquiryStatus, DeliveryArea, CustomerType } from "@prisma/client";
 
 // ---------- Auth ----------
 export const loginSchema = z.object({
@@ -47,6 +47,7 @@ export const productSchema = z.object({
   stockQuantity: z.coerce.number().int().min(0, "Stock cannot be negative"),
   unit: z.nativeEnum(Unit),
   status: z.nativeEnum(ProductStatus),
+  channel: z.nativeEnum(ProductChannel).default(ProductChannel.BOTH),
   // Wholesale pack / bulk buying (optional)
   hasBulkPricing: z.boolean().default(false),
   wholesaleLooseEnabled: z.boolean().default(true),

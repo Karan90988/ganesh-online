@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { Prisma, ProductStatus } from "@prisma/client";
+import { Prisma, ProductStatus, ProductChannel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ok, handleError, serialize } from "@/lib/api";
 import { PAGE_SIZE } from "@/lib/constants";
@@ -19,10 +19,17 @@ export async function GET(req: NextRequest) {
       48,
       parseInt(searchParams.get("pageSize") || String(PAGE_SIZE), 10)
     );
+    const mode = searchParams.get("mode")?.toUpperCase();
 
     const where: Prisma.ProductWhereInput = {
       status: { in: [ProductStatus.ACTIVE, ProductStatus.OUT_OF_STOCK] },
     };
+
+    if (mode === "RETAIL") {
+      where.channel = { in: [ProductChannel.BOTH, ProductChannel.RETAIL_ONLY] };
+    } else if (mode === "WHOLESALE") {
+      where.channel = { in: [ProductChannel.BOTH, ProductChannel.WHOLESALE_ONLY] };
+    }
     if (search) {
       where.OR = [
         { name: { contains: search, mode: "insensitive" } },

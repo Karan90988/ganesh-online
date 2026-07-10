@@ -48,6 +48,7 @@ const EMPTY_FORM = {
   stockQuantity: "0",
   unit: "PIECE",
   status: "ACTIVE",
+  channel: "BOTH",
   // Wholesale packaging type: "standard" (loose + optional sack) | "box" (biscuits)
   bulkType: "standard",
   wholesaleMinQty: "1",
@@ -128,6 +129,7 @@ export function ProductsManager() {
       stockQuantity: String(p.stockQuantity),
       unit: p.unit,
       status: p.status,
+      channel: (p as any).channel ?? "BOTH",
       // Derive packaging type: box = biscuits (no loose + a 2nd pack); else standard.
       bulkType: !p.wholesaleLooseEnabled && p.pack2Label ? "box" : "standard",
       wholesaleMinQty: String(p.wholesaleMinQty ?? 1),
@@ -475,6 +477,19 @@ export function ProductsManager() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div>
+              <Label>Sell in</Label>
+              <Select value={form.channel} onValueChange={(v) => setForm((f) => ({ ...f, channel: v }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="BOTH">Both (Retail &amp; Wholesale)</SelectItem>
+                  <SelectItem value="RETAIL_ONLY">Only Retail</SelectItem>
+                  <SelectItem value="WHOLESALE_ONLY">Only Wholesale</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Wholesale packaging type */}

@@ -43,7 +43,7 @@ export default function HomeLanding() {
       return;
     }
     const tmr = setTimeout(() => {
-      apiGet<{ products: ProductDTO[] }>(`/api/products?search=${encodeURIComponent(q)}&pageSize=8`)
+      apiGet<{ products: ProductDTO[] }>(`/api/products?search=${encodeURIComponent(q)}&pageSize=8&mode=${mode}`)
         .then((d) => setSuggestions(d.products))
         .catch(() => {});
     }, 250);

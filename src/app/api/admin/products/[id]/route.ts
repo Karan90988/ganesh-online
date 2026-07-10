@@ -46,6 +46,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
         stockQuantity: data.stockQuantity,
         unit: data.unit,
         status: data.status,
+        channel: data.channel,
         ...bulkFields(data),
       },
     });
