@@ -96,17 +96,33 @@ export default function HomeLanding() {
                 active ? [styles.tabActive, { backgroundColor: theme.light }] : styles.tabInactive,
               ]}
             >
-              <Ionicons
-                name={m === "RETAIL" ? "bag-handle" : "cube"}
-                size={active ? 18 : 15}
-                color={active ? c.main : "rgba(255,255,255,0.92)"}
-              />
-              <Text
-                style={[active ? styles.tabActiveText : styles.tabInactiveText, active && { color: c.main }]}
-                numberOfLines={1}
-              >
-                {m === "RETAIL" ? t("shopRetail") : t("shopWholesale")}
-              </Text>
+              <View style={styles.tabTitleRow}>
+                <Ionicons
+                  name={m === "RETAIL" ? "bag-handle" : "cube"}
+                  size={active ? 18 : 15}
+                  color={active ? c.main : "rgba(255,255,255,0.92)"}
+                />
+                <Text
+                  style={[active ? styles.tabActiveText : styles.tabInactiveText, active && { color: c.main }]}
+                  numberOfLines={1}
+                >
+                  {m === "RETAIL" ? t("shopRetail") : t("shopWholesale")}
+                </Text>
+              </View>
+              {m === "RETAIL" && (
+                <View style={styles.tabSubBadge}>
+                  <Text style={styles.tabSubText} numberOfLines={1}>
+                    {t("shopRetailSub")}
+                  </Text>
+                </View>
+              )}
+              {m === "WHOLESALE" && (
+                <View style={[styles.tabSubBadge, { backgroundColor: "#ea7c0c" }]}>
+                  <Text style={styles.tabSubText} numberOfLines={1}>
+                    {t("shopWholesaleSub")}
+                  </Text>
+                </View>
+              )}
             </Pressable>
           );
         })}
@@ -249,11 +265,14 @@ const styles = StyleSheet.create({
 
   // Folder-tab Retail/Wholesale toggle
   tabsBar: { flexDirection: "row", alignItems: "flex-end", gap: 8, paddingHorizontal: 12, paddingTop: 6 },
-  tab: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderTopLeftRadius: 16, borderTopRightRadius: 16, paddingHorizontal: 14 },
-  tabActive: { flex: 1.2, paddingVertical: 14 },
-  tabInactive: { flex: 1, paddingVertical: 10, backgroundColor: "rgba(255,255,255,0.18)" },
-  tabActiveText: { fontSize: 17, fontWeight: "900" },
+  tab: { flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, borderTopLeftRadius: 16, borderTopRightRadius: 16, paddingHorizontal: 14 },
+  tabActive: { flex: 1.2, paddingVertical: 12 },
+  tabInactive: { flex: 1, paddingVertical: 8, backgroundColor: "rgba(255,255,255,0.18)" },
+  tabActiveText: { fontSize: 16, fontWeight: "900" },
   tabInactiveText: { fontSize: 14, fontWeight: "700", color: "rgba(255,255,255,0.95)" },
+  tabTitleRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  tabSubBadge: { backgroundColor: "#15803d", borderRadius: 5, paddingHorizontal: 5, paddingVertical: 2, marginTop: 3 },
+  tabSubText: { fontSize: 10, fontWeight: "800", color: "#fff" },
 
   hoursRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, marginTop: 12 },
   hoursText: { fontSize: 13, fontWeight: "800" },
