@@ -92,8 +92,8 @@ export async function POST() {
         top.length === 1 ? top[0] : `${top[0]} & ${top[1]}`;
 
       await sendExpoPush([token], {
-        title: `Time to restock, ${firstName}!`,
-        body: `${productLine} — order again on GaneshNow`,
+        title: `Hi ${firstName}! Special offers are live`,
+        body: `Reorder ${productLine} at the best price. Tap to begin reorder!`,
         data: { type: "REORDER" },
       });
 
