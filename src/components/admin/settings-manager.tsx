@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Loader2, Save, Truck, ShoppingBag, Box } from "lucide-react";
+import { Loader2, Save, Truck, ShoppingBag, Box, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +18,12 @@ export function SettingsManager() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [pwError, setPwError] = useState("");
+  const [savingPw, setSavingPw] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -53,6 +59,40 @@ export function SettingsManager() {
     }
     setSaving(false);
   };
+
+  async function changePassword() {
+    setPwError("");
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return setPwError("All three fields are required.");
+    }
+    if (newPassword.length < 8) {
+      return setPwError("New password must be at least 8 characters.");
+    }
+    if (newPassword !== confirmPassword) {
+      return setPwError("New password and confirmation do not match.");
+    }
+    setSavingPw(true);
+    try {
+      const res = await fetch("/api/admin/settings/password", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success("Password changed successfully");
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      } else {
+        setPwError(json.error || "Failed to change password.");
+      }
+    } catch {
+      setPwError("Network error — please try again.");
+    } finally {
+      setSavingPw(false);
+    }
+  }
 
   if (loading || !settings) {
     return (
@@ -135,6 +175,52 @@ export function SettingsManager() {
         {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
         Save settings
       </Button>
+
+      {/* Change Password */}
+      <div className="rounded-xl border bg-card p-5 space-y-4">
+        <h2 className="flex items-center gap-2 font-semibold">
+          <KeyRound className="h-4 w-4 text-primary" /> Change Password
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div>
+            <Label htmlFor="cur-pw">Current Password</Label>
+            <Input
+              id="cur-pw"
+              type="password"
+              placeholder="Enter current password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="new-pw">New Password</Label>
+            <Input
+              id="new-pw"
+              type="password"
+              placeholder="Min. 8 characters"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="confirm-pw">Confirm New Password</Label>
+            <Input
+              id="confirm-pw"
+              type="password"
+              placeholder="Repeat new password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+          </div>
+        </div>
+        {pwError && (
+          <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{pwError}</p>
+        )}
+        <Button onClick={changePassword} disabled={savingPw} variant="outline">
+          {savingPw ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
+          {savingPw ? "Changing…" : "Change Password"}
+        </Button>
+      </div>
     </div>
   );
 }
